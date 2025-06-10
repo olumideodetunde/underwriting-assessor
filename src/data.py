@@ -71,12 +71,12 @@ class DataProcessorFactory:
     """Factory class for creating appropriate data processors."""
     
     _processors = {
-        '.pdf': PDFProcessor,
+        '.pdf' : PDFProcessor,
         '.docx': SurveyProcessor,
         '.xlsx': SpreadsheetProcessor,
-        '.xls': SpreadsheetProcessor,
-        '.eml': EmailProcessor,
-        '.msg': EmailProcessor,
+        '.xls' : SpreadsheetProcessor,
+        '.eml' : EmailProcessor,
+        '.msg' : EmailProcessor,
     }
     
     @classmethod
