@@ -29,7 +29,7 @@ class LLMMetrics(BaseModel):
 class InferenceEngine:
     def __init__(self, anthropic_api_key: str):
         self.llm = ChatAnthropic(
-            model="claude-sonnet-4-20250514",
+            model="claude-3-5-sonnet-latest",
             temperature=0.7,
             anthropic_api_key=anthropic_api_key
         )
@@ -117,7 +117,7 @@ def main():
     if not anthropic_api_key:
         raise ValueError("Missing required Anthropic API key in environment variables")
     engine = InferenceEngine(anthropic_api_key=anthropic_api_key)
-    file_path = "data/input/sample.pdf"
+    file_path = "data/input/car-insurance-question-set.pdf"
     assessment, metrics = engine.process_document(file_path)
     output_dir = "data/output"
     engine.save_results(assessment, metrics, output_dir)
