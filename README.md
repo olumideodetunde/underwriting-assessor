@@ -1,4 +1,4 @@
-# Underwriting Risk Assessment
+# Underwriting Assessor
 
 This project focuses on underwriting risk assessment using machine learning techniques.
 
