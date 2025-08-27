@@ -35,8 +35,8 @@ class Dataset:
 
 
 if __name__ == '__main__':
-    rating_csv = ""
-    clams_csv = ""
+    rating_csv = ''
+    clams_csv = ''
     DatasetInstance = Dataset(data_path=rating_csv, claims_path=clams_csv)
     merged = DatasetInstance.create_dataset(merge_columns=['ID','Cost_claims_year'])
     pd.set_option('display.max_columns', None)
