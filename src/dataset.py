@@ -35,8 +35,8 @@ class Dataset:
 
 
 if __name__ == '__main__':
-    rating_csv = "/Users/olumide/Library/CloudStorage/OneDrive-Personal/Documents/Research/Project 1/underwriting assessor/data/input/exp/Motor_vehicle_insurance_data.csv"
-    clams_csv = "/Users/olumide/Library/CloudStorage/OneDrive-Personal/Documents/Research/Project 1/underwriting assessor/data/input/exp/sample type claim.csv"
+    rating_csv = ''
+    clams_csv = ''
     DatasetInstance = Dataset(data_path=rating_csv, claims_path=clams_csv)
     merged = DatasetInstance.create_dataset(merge_columns=['ID','Cost_claims_year'])
     pd.set_option('display.max_columns', None)
