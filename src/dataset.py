@@ -1,43 +1,49 @@
+
 import pandas as pd
+from dotenv.variables import Literal
 from sklearn.model_selection import train_test_split
-from pathlib import Path
 
 class Dataset:
-
-    def __init__(self, data_path:str|Path, claims_path:str|Path) -> None:
-        self.claims_path = claims_path
-        self.data_path  = data_path
+    def __init__(self, data_path:str, claims_path:str):
+        self.claims = pd.read_csv(claims_path, delimiter=';')
+        self.data  = pd.read_csv(data_path, delimiter=';')
+        self.grouped_claims = None
         self.dataset = None
         self.train = None
         self.test  = None
 
-    @staticmethod
-    def load_data(path:str | Path ) -> pd.DataFrame:
-        if str(path).endswith('.csv'):
-            return pd.read_csv(path, delimiter=';')
-        else:
-            raise ValueError('Not a CSV file')
+    def group_claims(self, grouping_columns:list, aggregation_column:str, aggregation_method:str='count'):
+        self.grouped_claims = (self.claims
+                .groupby(grouping_columns)
+                .agg({aggregation_column:aggregation_method})
+                .rename(columns={aggregation_column:'claims_frequency'})
+                .reset_index()
+                )
+        return self
 
-    ##TODO: create dataset bloating up the merged dataset
-    def create_dataset(self, merge_columns:list) -> pd.DataFrame:
-        data = self.load_data(self.data_path)
-        claims = self.load_data(self.claims_path)
+    def create_dataset(self, merge_columns:list, join_method='left'):
         self.dataset = pd.merge(
-            left=data,
-            right=claims,
-            how = 'left',
-            on = merge_columns
+            left=self.data,
+            right=self.grouped_claims,
+            on = merge_columns,
+            how=join_method,
         )
-        return self.dataset
+        return self
 
-    def split_dataset(self):
-        pass
+    def split_dataset(self, test_ratio:float, to_shuffle:bool=False):
+        self.train, self.test = train_test_split(
+            self.dataset,
+            test_size = test_ratio,
+            shuffle = to_shuffle,
+        )
+        return self.train, self.test
 
 
 if __name__ == '__main__':
-    rating_csv = "/Users/olumide/Library/CloudStorage/OneDrive-Personal/Documents/Research/Project 1/underwriting assessor/data/input/exp/Motor_vehicle_insurance_data.csv"
-    clams_csv = "/Users/olumide/Library/CloudStorage/OneDrive-Personal/Documents/Research/Project 1/underwriting assessor/data/input/exp/sample type claim.csv"
-    DatasetInstance = Dataset(data_path=rating_csv, claims_path=clams_csv)
-    merged = DatasetInstance.create_dataset(merge_columns=['ID','Cost_claims_year'])
-    pd.set_option('display.max_columns', None)
-    print(merged)
+    rating_csv = "../data/input/exp/Motor_vehicle_insurance_data.csv"
+    claims_csv =  "../data/input/exp/sample_type_claim.csv"
+    DatasetInstance = (Dataset(data_path=rating_csv, claims_path=claims_csv)
+                  .group_claims(grouping_columns=['ID', 'Cost_claims_year'],
+                               aggregation_column='Cost_claims_by_type')
+                  .create_dataset(merge_columns=['ID', 'Cost_claims_year']))
+    train, test = DatasetInstance.split_dataset(test_ratio=0.2, to_shuffle=True)
