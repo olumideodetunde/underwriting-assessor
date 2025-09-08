@@ -14,7 +14,7 @@ class Feature:
     @staticmethod
     def take_datetime_difference_in_years(first_datetime: datetime, second_datetime: datetime, interval:str) -> float:
         #Interval here must be 'D' although, other code exist as captured here - https://numpy.org/doc/stable/reference/arrays.datetime.html#datetime-units
-        if interval is not 'D':
+        if interval != 'D':
             raise ValueError('Only "D" interval is supported')
         diff = (second_datetime - first_datetime) / np.timedelta64(1, interval)
         diff_years = abs(diff / 365.25)
