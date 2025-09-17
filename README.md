@@ -51,7 +51,6 @@ uv pip install -e ".[test]"
 The project uses:
 - `uv` for dependency management
 - `pytest` for testing
-- `pydantic` for data validation
 
 ## Running Tests
 
