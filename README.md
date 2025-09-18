@@ -36,7 +36,7 @@ uv pip install -e ".[test]"
 │   └── output/          # Model outputs
 ├── notebook/            # Analysis notebooks
 ├── src/                 # Core implementation
-│   ├── data.py         # Data processing
+│   ├── dataset.py         # Data processing
 │   ├── feature.py      # Feature engineering
 │   ├── inference.py    # Model inference
 │   └── model.py        # Model implementation
