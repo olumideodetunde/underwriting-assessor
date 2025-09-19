@@ -1,6 +1,4 @@
-
 import pandas as pd
-from dotenv.variables import Literal
 from sklearn.model_selection import train_test_split
 
 class Dataset:
@@ -13,13 +11,22 @@ class Dataset:
         self.test  = None
 
     def group_claims(self, grouping_columns:list, aggregation_column:str, aggregation_method:str='count'):
-        self.grouped_claims = (self.claims
-                .groupby(grouping_columns)
-                .agg({aggregation_column:aggregation_method})
-                .rename(columns={aggregation_column:'claims_frequency'})
-                .reset_index()
-                )
+        # Create all possible combinations from self.data
+        full_index = self.data[grouping_columns].drop_duplicates()
+        # Aggregate claims
+        claims_freq = (self.claims
+            .groupby(grouping_columns)
+            .agg({aggregation_column:aggregation_method})
+            .rename(columns={aggregation_column:'claims_frequency'})
+            .reset_index()
+        )
+        # Merge and fill NA
+        self.grouped_claims = (full_index
+            .merge(claims_freq, on=grouping_columns, how='left')
+            .assign(claims_frequency=lambda df: df['claims_frequency'].fillna(0))
+        )
         return self
+
 
     def create_dataset(self, merge_columns:list, join_method='left'):
         self.dataset = pd.merge(
@@ -38,12 +45,17 @@ class Dataset:
         )
         return self.train, self.test
 
+def main(insurance_variables_path:str,claims_variables_path:str):
+    DatasetInstance = (Dataset(data_path=insurance_variables_path, claims_path=claims_variables_path)
+                       .group_claims(grouping_columns=['ID', 'Cost_claims_year'],
+                                     aggregation_column='Cost_claims_by_type')
+                       .create_dataset(merge_columns=['ID', 'Cost_claims_year']))
+    train, test = DatasetInstance.split_dataset(test_ratio=0.2, to_shuffle=True)
+    return train, test
+
 
 if __name__ == '__main__':
     rating_csv = "../data/input/exp/Motor_vehicle_insurance_data.csv"
     claims_csv =  "../data/input/exp/sample_type_claim.csv"
-    DatasetInstance = (Dataset(data_path=rating_csv, claims_path=claims_csv)
-                  .group_claims(grouping_columns=['ID', 'Cost_claims_year'],
-                               aggregation_column='Cost_claims_by_type')
-                  .create_dataset(merge_columns=['ID', 'Cost_claims_year']))
-    train, test = DatasetInstance.split_dataset(test_ratio=0.2, to_shuffle=True)
+    TRAIN, TEST = main(rating_csv, claims_csv)
+    print(len(TRAIN))
