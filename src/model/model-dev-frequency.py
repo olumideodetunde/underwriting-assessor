@@ -2,12 +2,11 @@
 
 import mlflow
 import numpy as np
-import pathlib
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from src.dataset import main as dataset_prep_main
-from src.feature import main as feature_eng_main
+from model.dataset import main as dataset_prep_main
+from model.feature import main as feature_eng_main
 from sklearn.linear_model import PoissonRegressor
 from sklearn.metrics import (
     mean_absolute_error,
@@ -22,8 +21,8 @@ mlflow.set_tracking_uri("http://127.0.0.1:5000")
 mlflow.set_experiment("Insurance Claims Frequency Model")
 
 #####Define the input data#####
-insurance_variables_path = "../data/input/exp/Motor_vehicle_insurance_data.csv"
-claims_variables_path = "../data/input/exp/sample_type_claim.csv"
+insurance_variables_path = "../../data/input/exp/Motor_vehicle_insurance_data.csv"
+claims_variables_path = "../../data/input/exp/sample_type_claim.csv"
 
 def plot_claims_distribution(df):
     """Plot claims frequency distribution."""
