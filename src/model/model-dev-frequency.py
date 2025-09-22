@@ -76,8 +76,6 @@ def calculate_metrics(y_true, y_pred):
     mae = mean_absolute_error(y_true, y_pred)
     r2 = r2_score(y_true, y_pred)
     medae = median_absolute_error(y_true, y_pred)
-
-    # Calculate Poisson deviance only for positive predictions
     mask = y_pred > 0
     poisson_deviance = mean_poisson_deviance(y_true[mask], y_pred[mask])
 
@@ -98,14 +96,20 @@ def main():
 
     # Define features and target
     training_variables = ['Car_age_years', 'Type_risk', 'Area', 'Value_vehicle',
-                         'Distribution_channel', 'Cylinder_capacity']
+                         'Distribution_channel']
     target = ['claims_frequency']
 
     # Generate pre-training visualizations
     fig1 = plot_claims_distribution(train_with_eng_feature)
 
     # Start MLflow run
-    with mlflow.start_run() as run:
+    experiment_name = "Insurance Claims Frequency Model-I"
+    run_name = "poisson_model_v1"
+    run_description = "Poisson regression for insurance claims frequency prediction."
+
+    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+    mlflow.set_experiment(experiment_name)
+    with mlflow.start_run(run_name=run_name, description=run_description):
         # Train model
         poisson_regressor = PoissonRegressor(alpha=1e-12, solver='newton-cholesky', max_iter=300)
         poisson_model = poisson_regressor.fit(
@@ -142,6 +146,9 @@ def main():
         mlflow.log_param("alpha", poisson_regressor.alpha)
         mlflow.log_param("solver", poisson_regressor.solver)
         mlflow.log_param("max_iter", poisson_regressor.max_iter)
+        mlflow.log_param("run_name", run_name)
+        mlflow.log_param("train_variables", training_variables)
+
 
         # Log metrics with train/test prefixes
         for name, value in train_metrics.items():
@@ -155,8 +162,6 @@ def main():
             artifact_path="poisson_model",
             input_example=test_with_eng_feature[training_variables]
         )
-
-        # Log figures
         mlflow.log_figure(fig1, "claims_distribution.png")
         mlflow.log_figure(fig2, "feature_importance.png")
         mlflow.log_figure(fig3, "actual_vs_predicted.png")
