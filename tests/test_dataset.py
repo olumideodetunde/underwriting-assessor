@@ -1,6 +1,6 @@
 import pytest
 import pandas as pd
-from src.dataset import Dataset
+from src.model.dataset import Dataset
 
 @pytest.fixture
 def sample_claims_data():

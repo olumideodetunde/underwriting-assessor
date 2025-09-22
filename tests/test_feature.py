@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 
-from src.feature import Feature
+from src.model.feature import Feature
 
 
 
