@@ -167,5 +167,52 @@ def main():
         mlflow.log_figure(fig3, "actual_vs_predicted.png")
         mlflow.log_figure(fig4, "residuals.png")
 
+
+
 if __name__ == "__main__":
     main()
+    EXPERIMENT_NAME = "Insurance Claims Frequency Model-I"
+    MODEL_NAME = "poisson_model_v1"
+    from mlflow.tracking.client import MlflowClient
+    # Get the latest run ID from the experiment
+    client = MlflowClient()
+    experiment_id = client.get_experiment_by_name(EXPERIMENT_NAME).experiment_id
+    runs = client.search_runs(experiment_ids=[experiment_id], order_by=["start_time DESC"], max_results=1)
+    run_id = runs[0].info.run_id
+    print("Latest Run ID:", run_id)
+
+    model_uri = f"runs:/{run_id}/model"
+    # Register model
+    registered_model = mlflow.register_model(model_uri, MODEL_NAME)
+
+    import os
+    version = registered_model.version
+    LOCAL_MODEL_PATH = "."
+
+    model_version_info = client.get_model_version(MODEL_NAME, version)
+
+    # This downloads all model artifacts under the versioned model to the local path
+    mlflow.artifacts.download_artifacts(
+        artifact_uri=model_version_info.source,
+        dst_path=LOCAL_MODEL_PATH
+    )
+
+    print(f"Model saved to: {os.path.abspath(LOCAL_MODEL_PATH)}")
+
+    from dotenv import load_dotenv
+
+    # Load environment variables from .env file
+    load_dotenv()
+
+    # Access the variables
+    bucket_name = os.getenv("MODEL_BUCKET_NAME")
+    model_path = os.getenv("MODEL_PATH")
+
+    s3_bucket = f"s3://{bucket_name}/{model_path}"
+    print(f"Uploading model to S3 bucket: {s3_bucket}")
+    # Upload the model and its associated files to S3
+    os.system(f"aws s3 cp \"{os.path.abspath(LOCAL_MODEL_PATH)}\model\" {s3_bucket}/{version} --recursive")
+    # Also upload to the `latest`` folder in the bucket
+    os.system(f"aws s3 cp \"{os.path.abspath(LOCAL_MODEL_PATH)}\model\" {s3_bucket}/latest --recursive")
+    print(f"Model uploaded to S3: {s3_bucket}/{version}")
+
