@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-#TODO - make the endpoint work - may need to be sorted from s3 bucket path
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
