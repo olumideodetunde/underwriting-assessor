@@ -6,12 +6,16 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import mlflow.pyfunc
 import pandas as pd
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 MODEL_BUCKET_NAME = os.environ.get("MODEL_BUCKET_NAME")
-MODEL_PATH = os.environ.get("MODEL_PATH")
+MODEL_PATH = os.environ.get("LOAD_MODEL_PATH")
 
 app = FastAPI(
     title = "Claims Frequency Inference",
@@ -27,7 +31,7 @@ class MotorInsuranceData(BaseModel):
     Type_risk: int
     Area: int
     Value_vehicle:float
-    Distribution_channel:bool
+    Distribution_channel:int
 
 @app.on_event("startup")
 def load_model():
