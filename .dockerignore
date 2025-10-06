@@ -1,0 +1,15 @@
+# Secrets
+.env
+.aws/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Git
+.git/
+
+# Development
+.vscode/
+.idea/
+tests/

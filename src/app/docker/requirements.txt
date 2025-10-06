@@ -5,7 +5,6 @@ boto3>=1.26.0
 pydantic>=1.10.7
 python-dotenv>=1.0.0
 
-# For xgboost model's inference
 numpy==2.2.5
 pandas==2.2.3
 psutil==7.0.0
