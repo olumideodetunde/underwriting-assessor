@@ -6,10 +6,10 @@ RUN /usr/bin/apt-get update && \
     /usr/bin/apt-get install -y --no-install-recommends gcc && \
     rm -rf /var/lib/apt/lists/*
 
-COPY src/app/docker/requirements.txt .
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY src/app/ /app/
+COPY . /app/
 
 EXPOSE 80
 
