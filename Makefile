@@ -6,13 +6,20 @@ APP_NAME=freq-mode-app
 TAG=latest
 TF_VAR_app_name=${APP_NAME}
 REGISTRY_NAME=${APP_NAME}
-TF_VAR-image=$AWS_ACCOUNT_ID.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${REGISTRY_NAME}:${TAG}
-TF_VAR_region=${AWS_DEFAULT_REGION}
+TF_VAR_image=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${REGISTRY_NAME}:${TAG}
+TF_VAR_region=${AWS_REGION}
 
 setup-ecr:
 	cd terraform/setup && terraform init && terraform apply -auto-approve
 
-destroy-ecr:
+deploy-container:
+	cd	src/app && sh deploy.sh
+
+deploy-service:
+	cd terraform/app && terraform init && terraform apply -auto-approve
+
+destroy-ecr-and-service:
+	cd terraform/app && terraform init && terraform destroy -auto-approve
 	cd terraform/setup && terraform init && terraform destroy -auto-approve
 
 
