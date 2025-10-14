@@ -22,6 +22,8 @@ module "ecs" {
   public_subnet_ids  = [for s in module.network.public_subnets : s.id]
   private_subnet_ids = [for s in module.network.private_subnets : s.id]
   depends_on         = [module.network]
+  model_bucket_name  = var.model_bucket_name
+  load_model_path    = var.load_model_path
 }
 
 
