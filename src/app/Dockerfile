@@ -15,4 +15,4 @@ EXPOSE 80
 
 HEALTHCHECK --interval=30s --timeout=30s --start-period=10s CMD curl -f http://localhost:80/health || exit 1
 
-CMD ["uvicorn", "freq:app", "--host", "0.0.0.0", "--port", "80"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
