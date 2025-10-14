@@ -22,3 +22,13 @@ variable "private_subnet_ids" {
   description = "IDs of private subnets where the ECS service will be deployed to."
   type        = list(string)
 }
+
+variable "model_bucket_name" {
+  description = "s3 bucker name where model is stored"
+  type = string
+}
+
+variable "load_model_path" {
+  description = "s3 path where model is stored"
+  type = string
+}
