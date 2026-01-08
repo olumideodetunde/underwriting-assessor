@@ -18,6 +18,8 @@ dependencies = [
     "docx2txt>=0.9",
     "unstructured",
     "mlflow>=2.17.2",
+    "seaborn>=0.13.2",
+    "ipykernel>=6.29.5",
 ]
 
 [project.optional-dependencies]
