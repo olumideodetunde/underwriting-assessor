@@ -1,5 +1,7 @@
 .venv
 .jbeval
+.idea
 .github
 /data/input
 /data/output
+/tmp
