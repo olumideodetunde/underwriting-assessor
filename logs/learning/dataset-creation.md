@@ -2,13 +2,13 @@
 
 ## 1. Introduction
 
-Welcome! This guide walks you through how we created the **Motor Vehicle Insurance Dataset**, a crucial foundation for building predictive models in insurance pricing and risk assessment.
+Welcome! This guide walks you through how we created the **the-insurance-dataset** a subset of [Dataset of an actual motor vehicle insurance portfolio](https://doi.org/10.1007/s13385-024-00398-0), crucial for building predictive models in insurance pricing.
 
 ### What is This Dataset?
 
-The dataset contains comprehensive information about motor vehicle insurance policies combined with their associated claims history. Specifically, it merges:
-- **Insurance policy features**: Information about policyholders, their vehicles, and contract details
-- **Claims frequency data**: The number and types of claims filed per policyholder per year
+The dataset contains information about motor vehicle insurance policies combined with their associated claims history. Specifically, it merges:
+- **Insurance policy features**: Information about policyholders, their vehicles, and premium details
+- **Claims frequency data**: The types of claims and the cost of claims filed per policyholder per year
 
 ### Purpose
 
@@ -20,14 +20,15 @@ Imagine you work at an insurance company. To price a motor vehicle policy fairly
 - How likely is this customer to file a claim?
 - How much will those claims cost on average?
 
-This dataset provides the historical evidence to answer these questions!
+This dataset present information for us to answer these questions!
 
 ---
 
 ## 2. Data Sources
+This dataset can be downloaded here: [Dataset of an actual motor vehicle insurance portfolio](https://doi.org/10.1007/s13385-024-00398-0)
 
 ### Source 1: Motor Vehicle Insurance Data
-**File**: `data/input/exp/Motor_vehicle_insurance_data.csv`
+**File**: `data/Motor_vehicle_insurance_data.csv`
 
 This is our primary dataset containing information about insurance policies. Think of it as a **customer database** that tracks:
 - **Policyholder information**: Age, driving license date, customer seniority
@@ -38,18 +39,17 @@ This is our primary dataset containing information about insurance policies. Thi
 **Size**: 105,555 policy records across multiple years
 
 ### Source 2: Claims Data
-**File**: `data/input/exp/sample_type_claim.csv`
+**File**: `data/sample_type_claim.csv`
 
 This dataset records **claims history** - essentially, what happened when policyholders filed claims. It contains:
 - **Claim classifications**: Different types of claims (e.g., collision, theft, liability)
 - **Claim amounts**: The cost breakdown by claim type
-- **Time period**: The year the claim occurred
 
 **Key concept**: Each row represents a *claim type* for a specific policyholder in a specific year. So one policyholder might have multiple rows if they filed different types of claims in the same year.
 
 ### Data Relationship
-These two datasets are connected by:
-- **ID**: A unique policyholder identifier
+These two datasets can be connected by:
+- **ID**: Internal identification number assigned to each annual contract of a client
 - **Year**: The policy year (cost_claims_year in claims data, derived from policy dates in insurance data)
 
 ---
@@ -58,17 +58,11 @@ These two datasets are connected by:
 
 ### How Was This Data Gathered?
 
-This data comes from **actual insurance company operations**. Here's how insurers typically collect this:
-
-1. **Policy Creation**: When a customer buys or renews an insurance policy, their information is recorded in the policy management system
-2. **Claims Filing**: When a customer reports an accident or incident, it's recorded with:
-   - The type of claim (classification)
-   - The amount claimed
-   - When it happened
-3. **Data Export**: Both systems are periodically exported into CSV files for analysis
+- Please read the journal article associated with the dataset for full details on data collection methodology.
+- **Journal File**: `data/dataset-journal.pdf`
 
 ### Collection Period
-The data spans multiple years (2015-2019 based on the dates we see), capturing a full business cycle including:
+The data spans multiple years (November 2015–December 2018), capturing a full business cycle including:
 - New customer acquisitions
 - Renewals
 - Claims patterns across different time periods
@@ -82,7 +76,7 @@ The data spans multiple years (2015-2019 based on the dates we see), capturing a
 
 ## 4. Data Preprocessing
 
-Now here's where the magic happens! Raw data from insurance systems isn't immediately ready for analysis. We need to **transform it** into a usable dataset.
+Raw data from insurance systems isn't immediately ready for analysis. We need to **transform it** into a usable dataset.
 
 ### Step 1: Load the Raw Data
 
@@ -90,17 +84,15 @@ Now here's where the magic happens! Raw data from insurance systems isn't immedi
 import pandas as pd
 
 # Load both datasets
-insurance = pd.read_csv('../../data/input/exp/Motor_vehicle_insurance_data.csv', delimiter=";")
-claims = pd.read_csv('../../data/input/exp/sample_type_claim.csv', delimiter=';')
+insurance = pd.read_csv('../../data/input/Motor_vehicle_insurance_data.csv', delimiter=";")
+claims = pd.read_csv('../../data/input/sample_type_claim.csv', delimiter=';')
 ```
-
-**Why semicolon delimiter?** This is common in European countries where commas are used as decimal separators.
 
 ### Step 2: Aggregate Claims by Type (Create Frequency)
 
 **The Challenge**: The claims data has one row per claim *type*. But we want one number: "How many claims did this customer have in this year?"
 
-**The Solution**: Group all claim types for the same customer and year, then count them.
+**The Solution**: Group all claim types for the same customer having the same total claims amount for the year, then count them.
 
 ```python
 # Group by policyholder ID and year, then count the number of claim types
@@ -114,22 +106,22 @@ claims_frequency = (
 ```
 
 **What just happened?**
-- `groupby(['ID', 'Cost_claims_year'])`: Creates groups for each unique (customer, year) pair
+- `groupby(['ID', 'Cost_claims_year'])`: Creates groups for each unique (customer, total claims amount for the year) pair
 - `agg({'Cost_claims_by_type': 'count'})`: Counts how many rows (claim types) are in each group
 - `rename()`: Makes the column name meaningful
 - `reset_index()`: Converts the grouped result back to a flat table
 
 **Example**:
 ```
-Customer ID | Year | Claims Frequency
-    1       | 2016 |       2
-    1       | 2017 |       1
-    2       | 2016 |       0
+Customer ID | Claims Frequency
+    1       | 2
+    1       | 1
+    2       | 0
 ```
 
 ### Step 3: Merge Insurance Data with Claims Frequency
 
-**The Challenge**: The insurance data has many rows per customer (one per year) and doesn't have claims information yet.
+**The Challenge**: The insurance data has many rows (or policies) per customer (typically one per year) and doesn't have claims frequency we just derived yet.
 
 **The Solution**: Join (merge) the aggregated claims frequency to each insurance record.
 
@@ -207,23 +199,10 @@ dataset = (
 - `Second_driver`: Whether there's a second driver
 
 #### F. Target Variable
-- **`claims_frequency`**: Number of claims filed in that year (our prediction target)
-
-### Data Types
-
-```
-Integer columns: ID, Seniority, Policies_in_force, Max_policies, 
-                 Power, Year_matriculation, N_doors, claims_frequency
-                 
-Float columns: Cylinder_capacity, Value_vehicle, Length, Weight
-
-Date columns: All Date_* columns
-
-Categorical: Distribution_channel, Area, Type_risk, Type_fuel, Second_driver
-```
+- **`claims_frequency`**: Number of claims filed in that year (on of our intended prediction target for frequency modeling)
+- **`Cost_claims_year`**: Amount of claims filed that year (the other target for severity modeling)
 
 ### Sample Data
-
 ```
 ID | Date_start_contract | Year_matriculation | Power | claims_frequency
 ---|---|---|---|---
@@ -232,7 +211,6 @@ ID | Date_start_contract | Year_matriculation | Power | claims_frequency
 1  | 05/11/2017          | 2004               | 80    | 0
 2  | 26/09/2017          | 2004               | 80    | 0
 ```
-
 ---
 
 ## 6. Data Quality
@@ -250,26 +228,7 @@ ID | Date_start_contract | Year_matriculation | Power | claims_frequency
 - "Unknown value" → use imputation techniques (mean, median, mode)
 - "Absence of event" → use 0 (as we did here)
 
-#### Issue 2: Missing Vehicle Dimensions
-**Problem**: Some records have NaN values for `Length` (vehicle length)
-
-**Example**:
-```
-ID | Length | Weight
----|---|---
-1  | NaN    | 190
-```
-
-**Why?**: Older vehicles or certain vehicle types might not have standardized measurements.
-
-**Solution**: Left as NaN (Not addressed in this dataset creation, but important for downstream modeling)
-
-**Best Practice**: When you encounter NaNs:
-1. Understand *why* they're missing
-2. Check if missingness is random or systematic
-3. Decide on an imputation strategy (drop records, use mean/median, use model-based imputation)
-
-#### Issue 3: Data Consistency Across Years
+#### Issue 2: Data Consistency Across Years
 **Problem**: The same customer appears multiple times (one row per year), but some values should remain constant.
 
 **Example**: Vehicle characteristics shouldn't change between years for the same vehicle.
@@ -284,30 +243,21 @@ ID | Length | Weight
   - `Length`: ~80% complete (missing for some vehicles)
 
 - **Consistency**: 
-  - All claim frequencies are non-negative integers ✓
-  - All vehicle weights are reasonable (500-2500 kg) ✓
-  - Customer IDs are unique identifiers ✓
+  - All claim frequencies are non-negative integers
+  - All vehicle weights are reasonable (500-2500 kg)
+  - Customer IDs are unique identifiers
 
 - **Accuracy**:
   - Dates follow proper format (DD/MM/YYYY)
   - Age values are realistic (18-80 years)
   - Vehicle values are within expected ranges
-
-### Validation Checklist
-Before using this dataset, verify:
-- [ ] Claims frequency is non-negative integer
-- [ ] All merge keys (ID, Cost_claims_year) are non-null
-- [ ] Date columns parse correctly
-- [ ] No duplicate rows for same (ID, Cost_claims_year) pair
-- [ ] Vehicle characteristics are stable across years per customer
-
 ---
 
 ## 7.. Conclusion
 
 ### Key Takeaways
 
-1. **What We Built**: A comprehensive dataset combining insurance policy information with historical claims data, ready for predictive modeling.
+1. **What We Built**: A comprehensive dataset combining insurance policy information with claims frequency and claims costs
 
 2. **The Process**:
    - Loaded raw data from two sources (policies and claims)
@@ -323,29 +273,16 @@ Before using this dataset, verify:
    - Frequency modeling (predicting claim counts)
    - Severity modeling (predicting claim costs)
    - Premium calculation (frequency × severity = expected cost)
-   - Risk segmentation and customer profiling
-
-### Common Pitfalls to Avoid
-
-❌ **Don't**: Treat missing `claims_frequency` as "unknown" - they're zeros
-✓ **Do**: Understand that absence of data in claims = no claims filed
-
-❌ **Don't**: Ignore the left join behavior - it ensures every policy record is kept
-✓ **Do**: Remember this preserves even customers with zero claims
-
-❌ **Don't**: Use this dataset without understanding its temporal structure (multiple years per customer)
-✓ **Do**: Account for autocorrelation when modeling (same customer across years)
+   - Risk segmentation and customer profiling etc.
 
 ### Further Learning
 
 **To deepen your understanding, explore**:
 - The raw CSV files: Look at a few rows to see the actual data format
-- The aggregate queries: Manually calculate claims frequency for one customer to understand the groupby operation
-- The feature engineering notebook: See how these raw features are transformed for modeling
-- Insurance domain basics: Understanding insurance products helps you understand why certain features matter
+- The aggregate queries: Manually calculate claims frequency for one customer to understand the group by operation
+- Insurance domain basics: Understanding insurance products helps you understand why certain features matter, here is a link to an article that [insurance-a-mind-dump-so-you-get-a-head-start](https://medium.com/@olumideodetunde/insurance-a-mind-dump-so-you-get-a-head-start-e1b8dbc4ce76)
 
 ### Questions to Explore
-
 1. What happens if a customer has multiple policies in the same year? How does our dataset handle this?
 2. Why did we use a **left join** instead of an **inner join**? What would change?
 3. How would you validate that the merge operation worked correctly?
@@ -358,16 +295,12 @@ Before using this dataset, verify:
 ### File Locations
 ```
 Raw Data:
-  - data/input/exp/Motor_vehicle_insurance_data.csv (105,555 rows)
-  - data/input/exp/sample_type_claim.csv (aggregated claims)
+  - data/Motor_vehicle_insurance_data.csv
+  - data/sample_type_claim.csv
 
 Generated Dataset:
   - Created in memory during notebook execution
   - Can be saved to: data/output/ for downstream use
-
-Documentation:
-  - data/input/exp/Descriptive of the variables.xlsx (full variable definitions)
-  - data/input/exp/Insurance_Initiation_Variables.csv (initial variable info)
 
 Processing Notebook:
   - notebook/freq-sev-approach/dataset.ipynb (actual code)
