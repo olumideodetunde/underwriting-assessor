@@ -28,7 +28,7 @@ This dataset present information for us to answer these questions!
 This dataset can be downloaded here: [Dataset of an actual motor vehicle insurance portfolio](https://doi.org/10.1007/s13385-024-00398-0)
 
 ### Source 1: Motor Vehicle Insurance Data
-**File**: `data/Motor_vehicle_insurance_data.csv`
+**File**: `data/input/Motor_vehicle_insurance_data.csv`
 
 This is our primary dataset containing information about insurance policies. Think of it as a **customer database** that tracks:
 - **Policyholder information**: Age, driving license date, customer seniority
@@ -39,7 +39,7 @@ This is our primary dataset containing information about insurance policies. Thi
 **Size**: 105,555 policy records across multiple years
 
 ### Source 2: Claims Data
-**File**: `data/sample_type_claim.csv`
+**File**: `data/input/sample_type_claim.csv`
 
 This dataset records **claims history** - essentially, what happened when policyholders filed claims. It contains:
 - **Claim classifications**: Different types of claims (e.g., collision, theft, liability)
@@ -59,7 +59,7 @@ These two datasets can be connected by:
 ### How Was This Data Gathered?
 
 - Please read the journal article associated with the dataset for full details on data collection methodology.
-- **Journal File**: `data/dataset-journal.pdf`
+- **Journal File**: `data/input/dataset-journal.pdf`
 
 ### Collection Period
 The data spans multiple years (November 2015–December 2018), capturing a full business cycle including:
@@ -253,7 +253,7 @@ ID | Date_start_contract | Year_matriculation | Power | claims_frequency
   - Vehicle values are within expected ranges
 ---
 
-## 7.. Conclusion
+## 7. Conclusion
 
 ### Key Takeaways
 
@@ -289,7 +289,6 @@ ID | Date_start_contract | Year_matriculation | Power | claims_frequency
 4. What other features might you engineer from these 31 columns?
 
 ---
-
 ## Appendix: Technical Reference
 
 ### File Locations
@@ -303,13 +302,13 @@ Generated Dataset:
   - Can be saved to: data/output/ for downstream use
 
 Processing Notebook:
-  - notebook/freq-sev-approach/dataset.ipynb (actual code)
+  - notebook/freq-sev-approach/dataset.ipynb
 ```
 
 ### Dependencies
 
 ```python
-import pandas as pd              # Data manipulation
+import pandas as pd 
 ```
 
 ### Key Pandas Operations
