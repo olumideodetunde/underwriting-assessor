@@ -2,7 +2,7 @@
 
 ## 1. Introduction
 
-Welcome! This guide walks you through the **exploratory data analysis (EDA)** process for our motor vehicle insurance dataset. Think of EDA as being a detective — we're investigating the data to uncover patterns, spot anomalies, and develop hypotheses before building predictive models.
+Welcome! This guide walks you through the **exploratory data analysis (EDA)** process for our motor vehicle insurance dataset. Think of EDA as being a detective, we're investigating the data to uncover patterns, spot anomalies, and develop hypotheses before building predictive models.
 
 ### What is Exploratory Data Analysis?
 
@@ -17,11 +17,10 @@ Our exploration aims to answer these key business questions:
 
 1. **Claims Frequency Distribution**: How many claims do policyholders typically make? Is the distribution skewed?
 2. **Claims Severity Patterns**: When claims do occur, how costly are they? What's the range?
-3. **Policy Segmentation**: Can we identify natural groupings in the data that might inform pricing strategies?
 
 ### Why This Matters for Underwriting
 
-In insurance, the **pure premium** (expected claim cost) is calculated as:
+In insurance, one way to calculate **pure premium** (expected claim cost) is calculated as:
 
 ```
 Pure Premium = Frequency × Severity
@@ -31,47 +30,9 @@ Understanding both components separately helps us:
 - Price policies more accurately
 - Identify high-risk segments
 - Develop targeted risk mitigation strategies
-
 ---
 
 ## 2. Data Overview
-
-### Datasets Explored
-
-We work with two interconnected datasets:
-
-#### Dataset 1: Motor Vehicle Insurance Data
-**File**: `data/input/exp/Motor_vehicle_insurance_data.csv`
-
-| Characteristic | Details |
-|----------------|---------|
-| **Records** | 105,555 policy-year observations |
-| **Columns** | 30 features |
-| **Time Period** | November 2015 – December 2019 |
-| **Delimiter** | Semicolon (`;`) |
-
-#### Dataset 2: Claims Data
-**File**: `data/input/exp/sample_type_claim.csv`
-
-| Characteristic | Details |
-|----------------|---------|
-| **Records** | Claims broken down by type |
-| **Key Columns** | ID, Cost_claims_year, Cost_claims_by_type |
-| **Delimiter** | Semicolon (`;`) |
-
-### Key Variables in the Insurance Data
-
-The dataset contains rich information across several categories:
-
-| Category | Variables | Description |
-|----------|-----------|-------------|
-| **Identifiers** | ID, unique_policy_id | Policy and customer identifiers |
-| **Dates** | Date_start_contract, Date_last_renewal, Date_next_renewal, Date_birth, Date_driving_licence | Temporal information |
-| **Customer Info** | Seniority, Distribution_channel, Policies_in_force | Customer relationship data |
-| **Vehicle** | Year_matriculation, Power, Cylinder_capacity, Value_vehicle, N_doors, Type_fuel, Length, Weight | Vehicle characteristics |
-| **Risk Factors** | Type_risk, Area, Second_driver | Risk classification variables |
-| **Claims** | N_claims_year, Cost_claims_year, N_claims_history, R_Claims_history | Claims history |
-| **Policy** | Premium, Payment, Lapse, Date_lapse | Policy status and payment |
 
 ### Loading the Data
 
@@ -91,8 +52,6 @@ motor_df = pd.read_csv('../../data/input/exp/Motor_vehicle_insurance_data.csv', 
 claims_df = pd.read_csv('../../data/input/exp/sample_type_claim.csv', delimiter=';')
 ```
 
-**Pro Tip**: Always check your delimiter! European datasets often use semicolons (`;`) instead of commas (`,`). Loading with the wrong delimiter will result in a single column containing all your data.
-
 ---
 
 ## 3. Exploratory Data Analysis (EDA) Techniques
@@ -107,10 +66,6 @@ Before diving into analysis, we created two important derived features:
 
 ```python
 def assign_claims_bin(claims_value):
-    """
-    Categorize number of claims into bins.
-    Claims 0-25 get their own category, 25+ grouped together.
-    """
     if claims_value <= 25:
         return str(claims_value)
     else:
@@ -264,20 +219,7 @@ The frequency analysis revealed a critical insight for insurance pricing:
 
 3. **Long Tail**: While rare, some policyholders have up to 25 claims in a year (and potentially more). These high-frequency claimants require special attention.
 
-4. **Poisson-Like Distribution**: The pattern suggests a Poisson or Negative Binomial distribution might be appropriate for modeling.
-
-#### Visual Representation
-
-```
-Claims Frequency Distribution
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-0 claims  ████████████████████████████████████████████████████ 81.39%
-1 claim   █████ 9.04%
-2 claims  ███ 4.70%
-3 claims  █ 2.31%
-4+ claims █ <2.5%
-```
+4. **Poisson-Like Distribution**: The pattern suggests a Poisson distribution might be appropriate for modeling.
 
 ### 4.2 Claims Severity Distribution
 
@@ -325,94 +267,7 @@ The histogram visualizations reveal:
 - Shows that log-transformed severity might be easier to model
 - Suggests Gamma or Log-Normal distribution for severity modeling
 
-```
-Claims Severity Distribution (Conceptual)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Original Scale:
-€0-500     ████████████████████████████████████████ Most claims here
-€500-1K    ████████
-€1K-5K     ████
-€5K-50K    █
-€50K+      ▏ Rare but impactful
-
-Log Scale:
-~5 (€150)  ████████
-~6 (€400)  ████████████████████████████████████████ Peak
-~7 (€1.1K) ████████████████████
-~8 (€3K)   ████████
-~10+(€22K+)██
-```
-
-### 4.3 Combined Insights for Premium Calculation
-
-Combining frequency and severity:
-
-| Metric | Value | Implication |
-|--------|-------|-------------|
-| Claims per Policy | 0.395 (41,662 / 105,555) | On average, ~40% of a claim per policy-year |
-| Average Severity | €1,041.27 | When claims happen, average cost |
-| **Estimated Pure Premium** | **~€411** | 0.395 × €1,041 |
-
-**Important Caveat**: This is a simplified calculation. Actual premium calculation must account for:
-- Expenses and profit margin
-- Risk segmentation by customer/vehicle characteristics
-- Regulatory requirements
-- Market competition
-
----
-
-## 5. Challenges Encountered
-
-### Challenge 1: Data Delimiter Issues
-
-**Problem**: The CSV files use semicolons (`;`) instead of commas (`,`).
-
-**Solution**: Explicitly specify `delimiter=";"` in `pd.read_csv()`.
-
-**Learning Point**: Always inspect your raw data file before loading. A quick `head` command or opening in a text editor can save hours of debugging.
-
-```python
-# Wrong - would create a single column with all data
-df = pd.read_csv('file.csv')  
-
-# Correct - properly parses the columns
-df = pd.read_csv('file.csv', delimiter=';')
-```
-
-### Challenge 2: Missing Values
-
-**Problem**: Several columns have missing values:
-- `Length`: ~20% missing (vehicle length not recorded for all vehicles)
-- `Date_lapse`: Mostly NaN (only populated when policy lapses)
-
-**Solution**: 
-- For `Length`: Will need imputation or exclusion in modeling
-- For `Date_lapse`: NaN is meaningful (policy is still active)
-
-**Learning Point**: Missing values aren't always "bad data" — sometimes they carry information!
-
-### Challenge 3: Sorting String Numbers
-
-**Problem**: When sorting claim bins, "10" comes before "2" alphabetically.
-
-**Solution**: Use a key function to convert strings to integers for sorting:
-
-```python
-.sort_values(by=['claim_bin'], key=lambda x: x.astype(int), ascending=True)
-```
-
-### Challenge 4: Multiple Records per Customer
-
-**Problem**: The same customer ID appears multiple times (one per policy year).
-
-**Solution**: Created `unique_policy_id` by combining ID with renewal dates.
-
-**Learning Point**: Always understand your data's granularity. Is each row a customer? A policy? A policy-year? This affects all subsequent analysis.
-
----
-
-## 6. Conclusion
+## 5. Conclusion
 
 ### Summary of Key Findings
 
@@ -435,58 +290,8 @@ df = pd.read_csv('file.csv', delimiter=';')
 ### What We Learned
 
 - **EDA is Essential**: Before building any model, understanding your data's shape, distribution, and quirks is crucial
-- **Insurance Data is Unique**: Zero-inflation and right-skewed severity are hallmarks of insurance data
+- **Insurance Data is Unique**: Zero-inflation and right-skewed severity are not uncommon
 - **Visualization Matters**: The log-scale histogram revealed patterns invisible in the original scale
-
----
-
-## 7. Next Steps
-
-Based on our exploration, here are the recommended next steps:
-
-### 7.1 Feature Engineering
-
-1. **Age-Related Features**:
-   - Calculate driver age from `Date_birth`
-   - Calculate driving experience from `Date_driving_licence`
-   - Create age bands (young driver, experienced, senior)
-
-2. **Vehicle Age Features**:
-   - Calculate vehicle age from `Year_matriculation`
-   - Create depreciated value estimate
-
-3. **Customer Relationship Features**:
-   - Tenure bands from `Seniority`
-   - Multi-policy indicator from `Policies_in_force`
-
-4. **Exposure Calculation**:
-   - Calculate policy exposure (fraction of year covered)
-   - Essential for proper frequency modeling
-
-### 7.2 Model Development
-
-1. **Frequency Model Options**:
-   - Poisson Regression (baseline)
-   - Negative Binomial (for overdispersion)
-   - Zero-Inflated Poisson/NB (for excess zeros)
-
-2. **Severity Model Options**:
-   - Gamma GLM (for positive continuous data)
-   - Log-Normal Regression
-   - Tweedie Distribution (combined frequency-severity)
-
-### 7.3 Further Analysis
-
-1. **Correlation Analysis**: Examine relationships between features and claims
-2. **Segmentation Analysis**: Identify high-risk customer/vehicle profiles
-3. **Temporal Patterns**: Check for seasonality or trends in claims
-4. **Geographic Analysis**: Explore `Area` variable impact on claims
-
-### 7.4 Data Quality Improvements
-
-1. **Handle Missing `Length` Values**: Impute using vehicle type/model
-2. **Validate Consistency**: Ensure vehicle characteristics are consistent across years
-3. **Outlier Treatment**: Develop strategy for extreme severity values
 
 ---
 
@@ -496,8 +301,8 @@ Based on our exploration, here are the recommended next steps:
 
 ```
 Raw Data:
-  - data/input/exp/Motor_vehicle_insurance_data.csv
-  - data/input/exp/sample_type_claim.csv
+  - data/Motor_vehicle_insurance_data.csv
+  - data/sample_type_claim.csv
 
 Exploration Notebook:
   - notebook/freq-sev-approach/explore.ipynb
@@ -527,14 +332,9 @@ import matplotlib.pyplot as plt
 | `np.log()` | Natural logarithm | `np.log(df['col'])` |
 
 ### Recommended Reading
-
-- **Zero-Inflated Models**: Understanding when and why to use them
-- **GLMs in Insurance**: Generalized Linear Models for pricing
-- **Log Transformations**: When and how to apply them
-- **Insurance Pricing Fundamentals**: [insurance-a-mind-dump-so-you-get-a-head-start](https://medium.com/@olumideodetunde/insurance-a-mind-dump-so-you-get-a-head-start-e1b8dbc4ce76)
+- **Insurance Fundamentals**: [insurance-a-mind-dump-so-you-get-a-head-start](https://medium.com/@olumideodetunde/insurance-a-mind-dump-so-you-get-a-head-start-e1b8dbc4ce76)
 
 ---
-
 **Document Version**: 1.0  
 **Last Updated**: January 2026  
 **Source Notebook**: `notebook/freq-sev-approach/explore.ipynb`  
