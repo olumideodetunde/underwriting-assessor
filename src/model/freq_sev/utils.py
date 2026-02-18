@@ -18,12 +18,12 @@ def get_config():
         "RUN_NAME": os.getenv("RUN_NAME", "run_1_in_exp"),
         "RUN_DESCRIPTION": os.getenv("RUN_DESCRIPTION", "Poisson regression for insurance claims frequency prediction"),
         "S3_BUCKET": os.getenv("MODEL_BUCKET_NAME"),
-        "S3_BASE_PATH": os.getenv("MODEL_PATH", "dev")
+        "S3_BASE_PATH": os.getenv("MODEL_PATH", "dev"),
+        "FREQ_TARGET": os.getenv("FREQ_TARGET"),
+        "FREQ_FEATURES": os.getenv("FREQ_FEATURES")
     }
 
-
 def register_and_upload_model(config, run_id):
-
     client = MlflowClient()
     print(f"Registering model from run: {run_id}")
     model_uri = f"runs:/{run_id}/{config['ARTIFACT_MODEL_NAME']}"
@@ -36,16 +36,13 @@ def register_and_upload_model(config, run_id):
         dst_path=config["LOCAL_MODEL_PATH"]
     )
     print(f"Model downloaded to: {os.path.abspath(local_path)}")
-
     # Upload to S3 if bucket is configured
     if config["S3_BUCKET"]:
-        # Construct S3 path - using version number for organization
+        # Construct S3 path - using version number for organisation
         s3_path = f"{config['S3_BASE_PATH']}/{version}"
         s3_full_path = f"s3://{config['S3_BUCKET']}/{s3_path}"
-
         print(f"Uploading model to S3: {s3_full_path}")
         print(f"Local model path: {local_path}")
-
         # Upload to S3
         result = os.system(f"aws s3 cp '{local_path}' {s3_full_path} --recursive")
         if result == 0:
