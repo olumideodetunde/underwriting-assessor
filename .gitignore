@@ -1,6 +1,7 @@
 .venv
 .jbeval
 .idea
+src/model/freq_sev/.env
 .github
 /data/input/exp
 /tmp
