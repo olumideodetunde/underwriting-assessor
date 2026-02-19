@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def get_config():
+def get_frequency_config():
     return {
         "EXPERIMENT_NAME": os.getenv("EXPERIMENT_NAME", "Insurance Claims Frequency Model-III"),
         "MODEL_NAME": os.getenv("MODEL_NAME", "poisson_model_v001"),
