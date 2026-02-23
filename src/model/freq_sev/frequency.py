@@ -1,5 +1,3 @@
-import os
-
 import mlflow
 from sklearn.linear_model import PoissonRegressor
 from src.model.freq_sev.dataset import main as dataset_prep_main
@@ -23,7 +21,6 @@ def main(config):
     training_variables = config.get('FREQ_FEATURES').split(',')
     target = config.get('FREQ_TARGET')
 
-
     fig1 = plot_claims_distribution(train_with_eng_feature)
     mlflow.set_tracking_uri(config["MLFLOW_TRACKING_URI"])
     mlflow.set_experiment(config["EXPERIMENT_NAME"])
@@ -34,17 +31,17 @@ def main(config):
         run_id = run.info.run_id
         print(f"Started MLflow run: {run_id}")
 
-        train_dataset = mlflow.data.from_pandas(train_with_eng_feature, targets=target)
-        test_dataset = mlflow.data.from_pandas(test_with_eng_feature, targets=target)
-        mlflow.log_input(train_dataset, context="training")
-        mlflow.log_input(test_dataset, context="testing")
+        #train_dataset = mlflow.data.from_pandas(train_with_eng_feature[training_variables], targets=target)
+        #test_dataset = mlflow.data.from_pandas(test_with_eng_feature[training_variables], targets=target)
+        #mlflow.log_input(train_dataset, context="training")
+        #mlflow.log_input(test_dataset, context="testing")
 
-
-        poisson_regressor = PoissonRegressor(alpha=1e-12, solver='newton-cholesky', max_iter=300)
+        poisson_regressor = PoissonRegressor(alpha=1e-12, solver='newton-cholesky', max_iter=10)
         poisson_model = poisson_regressor.fit(
             train_with_eng_feature[training_variables],
             train_with_eng_feature[target].values.ravel()
         )
+
         y_pred_train = poisson_model.predict(train_with_eng_feature[training_variables])
         y_pred_test = poisson_model.predict(test_with_eng_feature[training_variables])
         train_metrics = calculate_metrics(
@@ -73,7 +70,6 @@ def main(config):
                 'training_variables': training_variables,
                 'target': target,
                 'model_name': config["MODEL_NAME"],
-
             }
         )
         for name, value in train_metrics.items():
