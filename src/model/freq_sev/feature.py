@@ -34,8 +34,8 @@ def main(df_to_be_engineered:pd.DataFrame) -> pd.DataFrame:
             Date_birth_dt=df_to_be_engineered['Date_birth'].apply(Feature.convert_to_datetime),
             Date_driving_licence_dt=df_to_be_engineered['Date_driving_licence'].apply(Feature.convert_to_datetime),
             power_to_weight=df_to_be_engineered['Power'] / df_to_be_engineered['Weight'],
-            Car_age_years=df_to_be_engineered['Year_matriculation'].apply(Feature.take_int_difference, args=(today_year,))
-
+            Car_age_years=df_to_be_engineered['Year_matriculation'].apply(Feature.take_int_difference, args=(today_year,)),
+            Type_fuel_encoded=df_to_be_engineered['Type_fuel'].map({'P': 0, 'D': 1})
         )
         .assign(
             Driver_age_years=lambda df: df['Date_birth_dt'].apply(Feature.take_datetime_difference_in_years,
