@@ -7,3 +7,5 @@ src/model/freq_sev/.env
 /tmp
 .github/prompts
 .github/copilot-instructions.md
+/mlruns
+mlartifacts
