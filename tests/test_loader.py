@@ -1,4 +1,3 @@
-import pandas as pd
 import pytest
 
 from src.data.loader import load_csv
