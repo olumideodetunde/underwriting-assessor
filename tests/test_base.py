@@ -184,30 +184,30 @@ class TestExtractYearFromDatetimeColumn:
 class TestAbsoluteDifferenceBetweenDatetimeColumns:
 
     def test_computes_difference_correctly(self, transformer, datetime_pair_df):
-        result = transformer._take_absolute_difference_between_datetime_columns(
+        result = transformer._take_absolute_difference_between_date_columns_in_years(
             datetime_pair_df, date_column_1="start_date",
             date_time_column_2="end_date", created_column="diff"
         )
-        expected = abs(datetime_pair_df["start_date"] - datetime_pair_df["end_date"])
+        expected = abs(datetime_pair_df["start_date"].dt.year - datetime_pair_df["end_date"].dt.year)
         pd.testing.assert_series_equal(result["diff"], expected, check_names=False)
 
     def test_difference_is_always_positive(self, transformer, datetime_pair_df):
         """Order of columns shouldn't matter — result is always absolute."""
-        result = transformer._take_absolute_difference_between_datetime_columns(
+        result = transformer._take_absolute_difference_between_date_columns_in_years(
             datetime_pair_df, date_column_1="end_date",
             date_time_column_2="start_date", created_column="diff"
         )
-        assert (result["diff"] >= pd.Timedelta(0)).all()
+        assert (result["diff"] >= 0).all()
 
     def test_new_column_is_created(self, transformer, datetime_pair_df):
-        result = transformer._take_absolute_difference_between_datetime_columns(
+        result = transformer._take_absolute_difference_between_date_columns_in_years(
             datetime_pair_df, date_column_1="start_date",
             date_time_column_2="end_date", created_column="duration"
         )
         assert "duration" in result.columns
 
     def test_returns_dataframe(self, transformer, datetime_pair_df):
-        result = transformer._take_absolute_difference_between_datetime_columns(
+        result = transformer._take_absolute_difference_between_date_columns_in_years(
             datetime_pair_df, date_column_1="start_date",
             date_time_column_2="end_date", created_column="diff"
         )
@@ -215,7 +215,7 @@ class TestAbsoluteDifferenceBetweenDatetimeColumns:
 
     def test_does_not_mutate_original_dataframe(self, transformer, datetime_pair_df):
         original_columns = list(datetime_pair_df.columns)
-        _ = transformer._take_absolute_difference_between_datetime_columns(
+        _ = transformer._take_absolute_difference_between_date_columns_in_years(
             datetime_pair_df, date_column_1="start_date",
             date_time_column_2="end_date", created_column="diff"
         )
@@ -227,7 +227,7 @@ class TestAbsoluteDifferenceBetweenDatetimeColumns:
             "end_date": pd.to_datetime(["01/07/2020", "10/12/2021"], format="%d/%m/%Y"),
         })
         with pytest.raises(ValueError):
-            transformer._take_absolute_difference_between_datetime_columns(
+            transformer._take_absolute_difference_between_date_columns_in_years(
                 df, date_column_1="start_date",
                 date_time_column_2="end_date", created_column="diff"
             )
