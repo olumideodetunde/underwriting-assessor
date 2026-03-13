@@ -1,4 +1,4 @@
-# 📚 Learning Logs
+# Learning Logs
 
 ## Aim
 
@@ -8,7 +8,7 @@ These logs are written for **learning purposes**. Each document breaks down a co
 
 ---
 
-## 📖 Logs & Recommended Reading Order
+## Logs & Recommended Reading Order
 
 Follow the logs in the order below. Each builds on the concepts and outputs of the previous one.
 
@@ -22,7 +22,7 @@ Follow the logs in the order below. Each builds on the concepts and outputs of t
 
 ---
 
-## 🧭 How to Use These Logs
+## How to Use These Logs
 
 1. **Read them in order** — each log builds on the previous, mirroring the real modelling pipeline.
 2. **Follow along with the code** — reference the corresponding notebooks in the `notebook/` directory as you read.
@@ -31,7 +31,7 @@ Follow the logs in the order below. Each builds on the concepts and outputs of t
 
 ---
 
-## 💡 Key Concept
+## Key Concept
 
 > In insurance pricing, **Pure Premium = Frequency × Severity**.
 >
@@ -39,7 +39,7 @@ Follow the logs in the order below. Each builds on the concepts and outputs of t
 
 ---
 
-## 📂 Related Resources
+## Related Resources
 
 | Resource | Location |
 |----------|----------|
