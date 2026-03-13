@@ -36,6 +36,14 @@ def datetime_df():
     })
 
 
+@pytest.fixture
+def datetime_pair_df():
+    return pd.DataFrame({
+        "start_date": pd.to_datetime(["01/01/2020", "10/06/2021", "15/03/2019"], format="%d/%m/%Y"),
+        "end_date": pd.to_datetime(["01/07/2020", "10/12/2021", "15/09/2019"], format="%d/%m/%Y"),
+    })
+
+
 # =============================================================
 # 1. Abstract contract tests
 # =============================================================
@@ -167,4 +175,61 @@ class TestExtractYearFromDatetimeColumn:
         )
         assert result["year"].iloc[0] == 2020.0
         assert pd.isna(result["year"].iloc[1])
+
+
+# =============================================================
+# 4. _take_absolute_difference_between_datetime_columns tests
+# =============================================================
+
+class TestAbsoluteDifferenceBetweenDatetimeColumns:
+
+    def test_computes_difference_correctly(self, transformer, datetime_pair_df):
+        result = transformer._take_absolute_difference_between_datetime_columns(
+            datetime_pair_df, date_column_1="start_date",
+            date_time_column_2="end_date", created_column="diff"
+        )
+        expected = abs(datetime_pair_df["start_date"] - datetime_pair_df["end_date"])
+        pd.testing.assert_series_equal(result["diff"], expected, check_names=False)
+
+    def test_difference_is_always_positive(self, transformer, datetime_pair_df):
+        """Order of columns shouldn't matter — result is always absolute."""
+        result = transformer._take_absolute_difference_between_datetime_columns(
+            datetime_pair_df, date_column_1="end_date",
+            date_time_column_2="start_date", created_column="diff"
+        )
+        assert (result["diff"] >= pd.Timedelta(0)).all()
+
+    def test_new_column_is_created(self, transformer, datetime_pair_df):
+        result = transformer._take_absolute_difference_between_datetime_columns(
+            datetime_pair_df, date_column_1="start_date",
+            date_time_column_2="end_date", created_column="duration"
+        )
+        assert "duration" in result.columns
+
+    def test_returns_dataframe(self, transformer, datetime_pair_df):
+        result = transformer._take_absolute_difference_between_datetime_columns(
+            datetime_pair_df, date_column_1="start_date",
+            date_time_column_2="end_date", created_column="diff"
+        )
+        assert isinstance(result, pd.DataFrame)
+
+    def test_does_not_mutate_original_dataframe(self, transformer, datetime_pair_df):
+        original_columns = list(datetime_pair_df.columns)
+        _ = transformer._take_absolute_difference_between_datetime_columns(
+            datetime_pair_df, date_column_1="start_date",
+            date_time_column_2="end_date", created_column="diff"
+        )
+        assert list(datetime_pair_df.columns) == original_columns
+
+    def test_raises_value_error_for_non_datetime_column(self, transformer):
+        df = pd.DataFrame({
+            "start_date": ["01/01/2020", "10/06/2021"],
+            "end_date": pd.to_datetime(["01/07/2020", "10/12/2021"], format="%d/%m/%Y"),
+        })
+        with pytest.raises(ValueError):
+            transformer._take_absolute_difference_between_datetime_columns(
+                df, date_column_1="start_date",
+                date_time_column_2="end_date", created_column="diff"
+            )
+
 

@@ -30,4 +30,17 @@ class BaseFeatureTransformer(ABC):
         df[extracted_year_column_name] = df[date_column].dt.year
         return df
 
+    @staticmethod
+    def _take_absolute_difference_between_datetime_columns(df:pd.DataFrame,
+                                                           date_column_1:str,
+                                                           date_time_column_2:str,
+                                                           created_column:str)->pd.DataFrame:
+        df = df.copy()
+        if not (pd.api.types.is_datetime64_any_dtype(df[date_column_1])
+                and pd.api.types.is_datetime64_any_dtype(df[date_time_column_2])):
+            raise ValueError('These are not columns of datatype datetime')
+        df[created_column] = abs(df[date_column_1] - df[date_time_column_2])
+        return df
+
+
 
