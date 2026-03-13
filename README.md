@@ -1,150 +1,273 @@
 # Underwriting Assessor
 
+## The Business Problem
 
-In this project, I built a machine learning solution to predict insurance premiums and assist underwriters in risk assessment and pricing decisions. The goal is to leverage historical insurance data to build a regression model that estimates technical premiums based on risk factors like policy details, insured attributes, and coverage specifications. I use Python tooling and practices to create a testable and reproducible ML pipeline.
+Insurance underwriting is the process of evaluating risk to determine whether to insure a client and at what price. This traditionally relies on manual assessment by underwriters using actuarial tables, experience, and judgment. It can be slow, inconsistent across underwriters, and hard to scale as application volumes grow.
 
-The insurance underwriting process relies on manual assessment and actuarial tables. This project demonstrates how machine learning can augment that process by learning patterns from historical pricing data to provide premium estimates. The model doesn't replace underwriter judgment but serves as a decision support tool that can improve consistency and speed in the pricing workflow.
+This project builds a machine learning tool that predicts insurance premiums based on historical pricing data and risk factors. It sits alongside underwriter judgment, providing data-driven premium estimates to help with consistency and speed in the pricing workflow.
 
-This solution is useful for insurance teams looking to modernize their underwriting process without requiring infrastructure setup. The focus here is on building a foundation with data processing, feature engineering, and model training that can later be extended into a production deployment pipeline.
+### Why This Is Hard: Two Distinct Pricing Problems
 
-### High-Level Approach
+This project views pricing as 2 separate workflows:
 
-In this project, I focus on building the core ML components with emphasis on code quality and reproducibility using the tools and practices below.
+| Scenario | What You Know | What Makes It Different |
+|----------|---------------|------------------------|
+| **New Client** | Demographics, vehicle info, coverage request | No claims history, no loyalty signal. You're pricing blind risk |
+| **Renewal** | Everything above + claims history, tenure, prior premiums | You have behavioural data, but the client can leave if mispriced |
 
-1. I use **UV** as the package installer instead of pip or poetry. UV is faster at resolving dependencies and creating virtual environments, which speeds up local development and CI/CD pipelines. It produces a lock file that ensures everyone on the team has identical dependencies, preventing the "works on my machine" problem.
+New client pricing is about risk estimation under uncertainty. Renewal pricing is about risk re-evaluation with evidence. The features, error tolerances, and business consequences differ enough that a single model struggles with both.
 
-2. The codebase follows a **modular architecture** with separation of concerns. Data processing logic lives in `dataset.py`, feature engineering in `feature.py`, model training in `model.py`, and inference logic in `inference.py`. This separation makes the code easier to test, maintain, and extend. Each module has a single responsibility.
-
-3. I implement **unit tests** using pytest to validate each component independently. Testing is important in ML projects because bugs in data processing or feature engineering can degrade model performance. The test suite covers data loading, feature transformations, model training, and inference paths.
-
-4. **Feature engineering** is treated as a component with dedicated implementation and testing. Insurance pricing depends on domain features, and getting this right is often more impactful than model selection. The feature pipeline transforms raw insurance data into predictive signals that capture risk patterns.
-
-5. The project uses **development mode installation** which allows you to edit source code without reinstalling the package. This speeds up the development cycle as you can modify code, run tests, and iterate without package management overhead.
+This project has separate model pipelines for each scenario. They share common infrastructure (data loading, feature engineering, storage, monitoring) but have independent training, evaluation, and serving paths. A YAML config file is what differs between the two.
 
 ### What This Project Delivers
 
-This repository contains an ML training pipeline for insurance premium prediction, from raw data to trained model artifacts. Here's what has been built:
+```
+config/renewal.yaml (or new_client.yaml)
+        |
+        v
+scripts/train.py --config config/renewal.yaml
+        |
+        |-> src/config.py          (validate config)
+        |-> src/data/loader.py     (load raw data)
+        |-> src/data/splitter.py   (train/test split)
+        |-> src/features/          (apply feature pipelines from config)
+        |-> src/model/factory.py   (create model from config string)
+        |-> src/training/trainer.py (train + cross-validate)
+        |-> src/metrics.py         (evaluate model performance)
+        |-> src/tracking.py        (log to MLflow)
+        +-> src/storage.py         (save to S3)
+                |
+                v
+src/serving/app.py
+        |
+        |-> POST /predict/new_client  -> new client model
+        |-> POST /predict/renewal     -> renewal model
+        +-> GET  /health              -> status check
+```
 
-**1. Data Processing Pipeline**
+**1. Dual Model Pipelines.** Separate training and inference paths for new client and renewal pricing, driven by YAML configuration files in `config/`.
 
-The data processing module handles loading and cleaning historical insurance datasets. It reads input data from the `data/input/` directory, performs validation to catch data quality issues early, and prepares the dataset for feature engineering. The pipeline handles data issues like missing values, outliers, and inconsistent formatting that appear in insurance data.
+**2. Feature Engineering.** Domain-driven feature transformations (driver age, driving experience, vehicle age, power-to-weight ratio) defined once and reused across training and serving to avoid training-serving skew.
 
-**2. Feature Engineering**
+**3. Model Training with Experiment Tracking.** MLflow integration logs parameters, metrics, and model artifacts for every training run so experiments are reproducible and comparable.
 
-Feature engineering transforms raw insurance attributes into predictors. This involves creating derived features that capture risk signals, encoding categorical variables, and scaling numerical features. The feature engineering logic is centralized in a dedicated module, making it easy to add new features or modify existing ones without touching model code.
+**4. Model Serving.** A FastAPI application with separate endpoints for new client and renewal predictions, input validation via Pydantic schemas, and health checks.
 
-**3. Model Training**
+**5. Evaluation Metrics.** Classification, regression, and calibration metrics computed consistently across both model types.
 
-The model training module implements the regression algorithm for premium prediction. It handles model selection, hyperparameter tuning, and evaluation metrics calculation. Trained models and their metadata are saved to the `data/output/` directory, making it easy to track different experiments and compare model performance over time.
+**6. Monitoring.** Drift detection that compares live prediction distributions against training baselines to catch data quality issues and model degradation before they affect pricing.
 
-**4. Inference Pipeline**
+**7. Testing.** Unit tests covering data loading, feature transformations, model training, and inference paths using pytest.
 
-The inference module loads trained models and generates predictions for new insurance applications. It ensures that the same feature transformations used during training are applied at inference time, preventing training-serving skew. This component serves as the foundation for exposing the model through an API.
+---
 
-**5. Testing Infrastructure**
+## Quick Start
 
-Unit tests validate each component's behavior. Tests cover edge cases, data validation, feature transformation correctness, and model inference paths. The test suite uses pytest with coverage reporting, making it easy to identify untested code paths and maintain code quality as the project evolves.
+### Prerequisites
 
-### Development Philosophy
+- Python 3.11+
+- [UV](https://github.com/astral-sh/uv) package installer
 
-This project prioritizes **reproducibility and maintainability** over quick prototyping. The structured approach here provides several advantages:
-
-**Version Control**: All code is properly versioned, making it easy to track changes and collaborate with team members.
-
-**Testability**: Modular code with unit tests catches bugs early and gives confidence when refactoring.
-
-**Extensibility**: The architecture makes it straightforward to add new features, swap models, or integrate with production systems.
-
-**Documentation**: The project structure and separation of concerns makes it easier for new team members to understand the codebase.
-
-The notebook directory contains exploratory analysis and experimentation, but all production code lives in the `src/` directory with proper abstractions and error handling. This separation keeps exploration flexible while maintaining code quality in the core implementation.
-
-### Current State and Future Direction
-
-Right now, this project focuses on the training phase of the ML lifecycle. The model trains on historical data, evaluates performance, and saves artifacts for later use. This is a foundation, but it's just the first step in an MLOps pipeline.
-
-The next steps would be:
-
-**Experiment Tracking**: Integrate MLflow to log training runs, parameters, metrics, and model versions systematically.
-
-**Model Serving**: Wrap the inference logic in a FastAPI service with health checks and input validation.
-
-**Containerization**: Package the application in Docker for consistent deployment across environments.
-
-**Cloud Deployment**: Deploy to AWS using ECS with Fargate for serverless, scalable inference.
-
-**Infrastructure as Code**: Use Terraform to define and manage cloud resources reproducibly.
-
-These extensions would transform the project from a local training pipeline into a production ML service. However, getting the foundational pieces right is the first step, and that's what this repository delivers.
-
-
----------------------
-## Project Overview
-
-This project implements a data-driven approach to insurance pricing prediction using:
-- Feature engineering from historical insurance data
-- Machine learning models for price prediction
-- Unit testing for reliability
-
-## Setup
-
-This project uses UV as the package installer:
+### Setup
 
 ```bash
-# Install UV
+git clone https://github.com/olumideodetunde/underwriting-assessor.git
+cd underwriting-assessor
+
 pip install uv
 
-# Create and activate virtual environment
 uv venv
-source .venv/bin/activate  # On Unix/macOS
-# or
-.venv\Scripts\activate  # On Windows
-
-# Install package in development mode
+source .venv/bin/activate
 uv pip install -e ".[test]"
 ```
+
+### Train a Model
+
+```bash
+make train-new        # Train the new client model
+make train-renewal    # Train the renewal model
+make train-all        # Train both
+```
+
+Or directly:
+
+```bash
+python scripts/train.py --config config/new_client.yaml
+python scripts/train.py --config config/renewal.yaml
+```
+
+### Serve Predictions
+
+```bash
+make serve
+```
+
+Or directly:
+
+```bash
+uvicorn src.serving.app:app --host 0.0.0.0 --port 8000 --reload
+```
+
+Test a prediction:
+
+```bash
+curl -X POST http://localhost:8000/predict/new_client \
+  -H "Content-Type: application/json" \
+  -d '{"driver_age": 35, "vehicle_value": 25000, "area": 1, "type_risk": 3}'
+```
+
+### Run Tests
+
+```bash
+make test
+```
+
+Or directly:
+
+```bash
+pytest tests/ -v
+pytest --cov=src
+```
+
+### Run with Docker
+
+```bash
+docker build -t underwriting-assessor .
+docker run -p 8000:8000 underwriting-assessor
+```
+
+---
 
 ## Project Structure
 
 ```
-├── app/                  # Application code
-├── data/                 # Data directory
-│   ├── input/           # Input datasets
-│   └── output/          # Model outputs
-├── notebook/            # Analysis notebooks
-├── src/                 # Core implementation
-│   ├── dataset.py         # Data processing
-│   ├── feature.py      # Feature engineering
-│   ├── inference.py    # Model inference
-│   └── model.py        # Model implementation
-├── tests/              # Unit tests
-├── pyproject.toml      # Project configuration
-├── setup.py            # Setup script
-└── uv.lock             # Dependency lock file
+underwriting-assessor/
+|
+|-- config/
+|   |-- base.yaml                    # Shared defaults
+|   |-- new_client.yaml              # Overrides for new clients
+|   +-- renewal.yaml                 # Overrides for renewals
+|
+|-- data/
+|   +-- input/                       # Raw data (gitignored)
+|       +-- exp/
+|
+|-- logs/
+|   +-- learning/                    # Step-by-step learning walkthroughs
+|
+|-- notebook/
+|   |-- new_client/                  # EDA & feature exploration for new clients
+|   +-- renewal/                     # EDA & feature exploration for renewals
+|
+|-- src/
+|   |-- __init__.py
+|   |-- config.py                    # Pydantic config schema
+|   |-- tracking.py                  # MLflow experiment tracking wrapper
+|   |-- storage.py                   # S3 model artifact storage
+|   |-- monitoring.py                # Drift detection utilities
+|   |-- metrics.py                   # Evaluation metric computation
+|   |
+|   |-- data/
+|   |   |-- __init__.py
+|   |   |-- loader.py                # Load raw data, handle CSV quirks
+|   |   +-- splitter.py              # Train/test split logic
+|   |
+|   |-- features/
+|   |   |-- __init__.py              # Feature registry
+|   |   |-- base.py                  # Abstract transformer contract
+|   |   |-- driver.py                # Driver features (age, experience)
+|   |   |-- payment.py               # Payment features
+|   |   |-- claims.py                # Claims features
+|   |   +-- vehicle.py               # Vehicle features
+|   |
+|   |-- model/
+|   |   |-- __init__.py
+|   |   +-- factory.py               # Model registry + creation from config
+|   |
+|   |-- training/
+|   |   |-- __init__.py
+|   |   +-- trainer.py               # Training orchestration
+|   |
+|   +-- serving/
+|       |-- __init__.py
+|       |-- app.py                   # FastAPI app + lifespan
+|       |-- routes.py                # /predict/new_client, /predict/renewal, /health
+|       |-- schemas.py               # Pydantic request/response models
+|       +-- request_logger.py        # Middleware for latency/request counts
+|
+|-- scripts/
+|   |-- train.py                     # CLI entry point for training
+|   |-- deploy.py                    # Push model to S3 + update serving
+|   +-- monitor.py                   # Run drift checks offline
+|
+|-- tests/
+|   |-- test_features.py
+|   |-- test_model.py
+|   |-- test_training.py
+|   +-- test_serving.py
+|
+|-- terraform/
+|   |-- app/                         # AWS ECS, ALB, ECR resources
+|   +-- setup/                       # VPC, IAM, S3 bootstrap
+|
+|-- Dockerfile
+|-- docker-compose.yaml
+|-- Makefile
+|-- pyproject.toml
++-- uv.lock
 ```
+
+---
+
+## Learning Logs
+
+The `logs/learning/` directory contains step-by-step walkthroughs of the key stages of this project, written for learning purposes. See `logs/README.md` for the full reading guide. The logs cover:
+
+1. **Dataset Creation** -- merging policy data with claims history
+2. **Exploration** -- EDA on claims frequency and severity distributions
+3. **Feature Engineering** -- transforming raw data into model-ready features
+4. **Frequency Modelling** -- predicting how often claims occur (Poisson regression)
+5. **Severity Modelling** -- predicting how costly claims are (Gamma regression)
+
+---
 
 ## Development
 
-The project uses:
-- `uv` for dependency management
-- `pytest` for testing
+### Tools
 
-## Running Tests
+| Tool | Purpose |
+|------|---------|
+| **UV** | Dependency management. Faster than pip/poetry, deterministic lock files |
+| **pytest** | Testing framework with coverage reporting |
+| **MLflow** | Experiment tracking. Logs params, metrics, and artifacts per run |
+| **FastAPI** | Model serving with automatic OpenAPI docs |
+| **Docker** | Consistent packaging across environments |
+| **Pydantic** | Input validation for API requests and config files |
+| **Terraform** | Infrastructure as code for AWS resources |
 
-```bash
-# Run all tests
-pytest
+### Design Principles
 
-# Run tests with coverage
-pytest --cov=src
+- **Config drives behaviour.** The same training code handles both new client and renewal models. The YAML config determines which features, model type, and hyperparameters to use.
 
-# Run specific test file
-pytest tests/test_inference.py
-```
+- **Scripts are thin entry points.** Every file in `scripts/` parses arguments and calls functions from `src/`. Logic lives in `src/`, invocation lives in `scripts/`.
 
-## Features
+- **Start flat, promote to directories when needed.** Files at the `src/` level (`config.py`, `monitoring.py`, `metrics.py`) are shared utilities used by training, serving, and scripts. They get promoted to directories when they outgrow a single file.
 
-- Data processing pipeline for insurance datasets
-- Feature engineering for risk assessment
-- Machine learning model for price prediction
-- Unit tests for core functionality
+- **Notebooks explore, `src/` implements.** Exploratory analysis lives in `notebook/`. Production code lives in `src/` with abstractions, error handling, and tests.
+
+- **Reproducibility over speed.** UV lock files, MLflow tracking, and versioned model artifacts mean training runs can be recreated.
+
+---
+
+## Planned Improvements
+
+| Phase | What | Status |
+|-------|------|--------|
+| Core ML pipeline | Data loading, features, model training, evaluation | Done |
+| Experiment tracking | MLflow integration | In progress |
+| Model serving | FastAPI with dual endpoints | In progress |
+| Containerization | Docker packaging | Planned |
+| Cloud deployment | AWS ECS with Fargate | Planned |
+| Infrastructure as code | Terraform for AWS resources | Planned |
+| CI/CD | GitHub Actions for test + deploy | Planned |
+| Monitoring | Drift detection in production | Planned |
