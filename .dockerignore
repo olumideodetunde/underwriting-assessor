@@ -1,5 +1,5 @@
 # Secrets
-src/model/freq_sev/.env
+.env
 .aws/
 
 # Python cache
