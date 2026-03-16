@@ -2,12 +2,12 @@ import mlflow
 from xgboost import XGBRegressor
 from src.model.freq_sev.dataset import main as dataset_prep_main
 from src.model.freq_sev.feature import main as feature_eng_main
-from src.model.freq_sev.utils import register_and_upload_model, get_frequency_config
-from src.model.freq_sev.eval import (plot_claims_distribution,
-                                     plot_feature_importance,
-                                     plot_residuals,
-                                     plot_actual_vs_predicted,
-                                     calculate_metrics)
+from src.model.freq_sev.utils import get_frequency_config
+from metrics import (plot_claims_distribution,
+                     plot_feature_importance,
+                     plot_residuals,
+                     plot_actual_vs_predicted,
+                     calculate_metrics)
 CONFIG = get_frequency_config()
 mlflow.set_tracking_uri(CONFIG["MLFLOW_TRACKING_URI"])
 mlflow.set_experiment(CONFIG["EXPERIMENT_NAME"])
