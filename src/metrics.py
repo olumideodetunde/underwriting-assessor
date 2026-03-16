@@ -10,11 +10,11 @@ from sklearn.metrics import (
     median_absolute_error
 )
 
-def plot_claims_distribution(df):
+def plot_claims_distribution(df, target: str = "claims_frequency"):
     fig, ax = plt.subplots(figsize=(10, 6))
-    df['claims_frequency'].hist(bins=30, ax=ax)
+    df[target].hist(bins=30, ax=ax)
     ax.set_title('Claims Frequency Distribution')
-    ax.set_xlabel('Claims Frequency')
+    ax.set_xlabel(target)
     ax.set_ylabel('Count')
     plt.tight_layout()
     return fig
