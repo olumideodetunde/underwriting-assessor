@@ -22,12 +22,12 @@ def start_run(run_name: str = "", description: str = ""):
         yield run.info.run_id
 
 
-def log_params(params: dict):
+def log_parameters(params: dict):
     """Log a flat dict of parameters."""
     mlflow.log_params(params)
 
 
-def log_metrics(metrics: dict, prefix: str = ""):
+def log_metrics_nested(metrics: dict, prefix: str = ""):
     """
     Log a dict of metric_name: value.
     prefix groups them, e.g. prefix="train" -> "train/mse", "train/mae".
@@ -37,27 +37,24 @@ def log_metrics(metrics: dict, prefix: str = ""):
         mlflow.log_metric(key, value)
 
 
-def log_model(model, artifact_path: str, input_example=None):
+def log_model(model, name: str, input_example=None):
     """
     Log any model. Detects the flavour automatically.
     - XGBoost models  -> mlflow.xgboost.log_model
     - Everything else -> mlflow.sklearn.log_model
     """
-    try:
-        from xgboost import XGBModel
-        if isinstance(model, XGBModel):
-            mlflow.xgboost.log_model(
-                xgb_model=model,
-                name=artifact_path,
-                input_example=input_example,
-            )
-            return
-    except ImportError:
-        pass
+    from xgboost import XGBModel
+    if isinstance(model, XGBModel):
+        mlflow.xgboost.log_model(
+            xgb_model=model,
+            name=name,
+            input_example=input_example,
+        )
+        return
 
     mlflow.sklearn.log_model(
         sk_model=model,
-        name=artifact_path,
+        name=name,
         input_example=input_example,
     )
 

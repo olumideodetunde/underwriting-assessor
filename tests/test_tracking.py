@@ -75,11 +75,11 @@ class TestLogParams:
 
     def test_logs_params_dict(self, mock_mlflow):
         params = {"n_estimators": 100, "max_depth": 6}
-        tracking.log_params(params)
+        tracking.log_parameters(params)
         mock_mlflow.log_params.assert_called_once_with(params)
 
     def test_logs_empty_dict(self, mock_mlflow):
-        tracking.log_params({})
+        tracking.log_parameters({})
         mock_mlflow.log_params.assert_called_once_with({})
 
 
@@ -91,21 +91,21 @@ class TestLogMetrics:
 
     def test_adds_prefix_to_metric_names(self, mock_mlflow):
         metrics = {"mse": 0.5, "mae": 0.3}
-        tracking.log_metrics(metrics, prefix="train")
+        tracking.log_metrics_nested(metrics, prefix="train")
         mock_mlflow.log_metric.assert_any_call("train/mse", 0.5)
         mock_mlflow.log_metric.assert_any_call("train/mae", 0.3)
 
     def test_no_prefix_logs_bare_names(self, mock_mlflow):
-        tracking.log_metrics({"mse": 0.5})
+        tracking.log_metrics_nested({"mse": 0.5})
         mock_mlflow.log_metric.assert_called_once_with("mse", 0.5)
 
     def test_empty_string_prefix_logs_bare_names(self, mock_mlflow):
-        tracking.log_metrics({"r2": 0.9}, prefix="")
+        tracking.log_metrics_nested({"r2": 0.9}, prefix="")
         mock_mlflow.log_metric.assert_called_once_with("r2", 0.9)
 
     def test_logs_correct_number_of_metrics(self, mock_mlflow):
         metrics = {"mse": 0.5, "mae": 0.3, "r2": 0.9}
-        tracking.log_metrics(metrics, prefix="test")
+        tracking.log_metrics_nested(metrics, prefix="test")
         assert mock_mlflow.log_metric.call_count == 3
 
 
@@ -118,24 +118,24 @@ class TestLogModel:
     def test_xgboost_model_uses_xgboost_flavour(self, mock_mlflow):
         from xgboost import XGBRegressor
         model = XGBRegressor(n_estimators=10)
-        tracking.log_model(model, artifact_path="model")
+        tracking.log_model(model, name="model")
         mock_mlflow.xgboost.log_model.assert_called_once()
         mock_mlflow.sklearn.log_model.assert_not_called()
 
     def test_sklearn_model_uses_sklearn_flavour(self, mock_mlflow):
         from sklearn.linear_model import GammaRegressor
         model = GammaRegressor()
-        tracking.log_model(model, artifact_path="model")
+        tracking.log_model(model, name="model")
         mock_mlflow.sklearn.log_model.assert_called_once()
         mock_mlflow.xgboost.log_model.assert_not_called()
 
     def test_passes_artifact_path(self, mock_mlflow):
         from sklearn.linear_model import GammaRegressor
         model = GammaRegressor()
-        tracking.log_model(model, artifact_path="gamma_model")
+        tracking.log_model(model, name="gamma_model")
         mock_mlflow.sklearn.log_model.assert_called_once_with(
             sk_model=model,
-            artifact_path="gamma_model",
+            name="gamma_model",
             input_example=None,
         )
 
@@ -143,7 +143,7 @@ class TestLogModel:
         from sklearn.linear_model import GammaRegressor
         model = GammaRegressor()
         example = [1, 2, 3]
-        tracking.log_model(model, artifact_path="model", input_example=example)
+        tracking.log_model(model, name="model", input_example=example)
         _, kwargs = mock_mlflow.sklearn.log_model.call_args
         assert kwargs["input_example"] == [1, 2, 3]
 
