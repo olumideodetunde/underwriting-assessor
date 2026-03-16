@@ -116,7 +116,7 @@ trainset, testset = train_test_split(
 Features are created using the same dedicated feature engineering module:
 
 ```python
-from src.model.freq_sev.feature import main as feature_main
+from model import main as feature_main
 
 features_trainset = feature_main(trainset)
 features_testset = feature_main(testset)
