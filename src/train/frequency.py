@@ -1,117 +1,79 @@
-import mlflow
-from xgboost import XGBRegressor
-from model import main as dataset_prep_main
-from model import main as feature_eng_main
-from utils import get_frequency_config
-from metrics import (plot_claims_distribution,
-                     plot_feature_importance,
-                     plot_residuals,
-                     plot_actual_vs_predicted,
-                     calculate_metrics)
-CONFIG = get_frequency_config()
-mlflow.set_tracking_uri(CONFIG["MLFLOW_TRACKING_URI"])
-mlflow.set_experiment(CONFIG["EXPERIMENT_NAME"])
-insurance_variables_path = CONFIG["INSURANCE_VARIABLES_PATH"]
-claims_variables_path = CONFIG["CLAIMS_VARIABLES_PATH"]
+from src.data.loader import load_csv
+from src.data.splitter import split_data
+from src.feature import Driver, Vehicle
+from src.model.factory import select_training_algorithm
+from src.metrics import (plot_claims_distribution,
+                         plot_feature_importance,
+                         plot_residuals,
+                         plot_actual_vs_predicted,
+                         calculate_metrics)
+from src import tracking
 
-def main(config):
-    train, test = dataset_prep_main(config["INSURANCE_VARIABLES_PATH"], config["CLAIMS_VARIABLES_PATH"])
-    train_with_eng_feature = feature_eng_main(train)
-    test_with_eng_feature = feature_eng_main(test)
-    training_variables = config.get('FREQ_FEATURES').split(',')
-    target = config.get('FREQ_TARGET')
 
-    # Handle NaN values - drop rows with NaN in training variables or target
-    train_clean = train_with_eng_feature.dropna(subset=training_variables + [target])
-    test_clean = test_with_eng_feature.dropna(subset=training_variables + [target])
+def run(config):
+    insurance_dataset = load_csv(config['insurance_csv'])
+    trainset, testset = split_data(insurance_dataset)
 
-    print(f"Training set: {len(train_with_eng_feature)} → {len(train_clean)} after dropping NaN")
-    print(f"Test set: {len(test_with_eng_feature)} → {len(test_clean)} after dropping NaN")
+    driver = Driver()
+    vehicle = Vehicle()
 
-    fig1 = plot_claims_distribution(train_clean)
-    mlflow.set_tracking_uri(config["MLFLOW_TRACKING_URI"])
-    mlflow.set_experiment(config["EXPERIMENT_NAME"])
-    run_name = config.get("RUN_NAME", "")
-    run_description = config.get("RUN_DESCRIPTION", "Poisson regression for insurance claims frequency prediction.")
+    trainset_feat = vehicle.transform(trainset)
+    trainset_feat = driver.transform(trainset_feat)
 
-    with mlflow.start_run(run_name=run_name, description=run_description) as run:
-        run_id = run.info.run_id
-        print(f"Started MLflow run: {run_id}")
+    testset_feat = vehicle.transform(testset)
+    testset_feat = driver.transform(testset_feat)
 
-        #train_dataset = mlflow.data.from_pandas(train_clean[training_variables], targets=target)
-        #test_dataset = mlflow.data.from_pandas(test_clean[training_variables], targets=target)
-        #mlflow.log_input(train_dataset, context="training")
-        #mlflow.log_input(test_dataset, context="testing")
 
-        xgb_regressor = XGBRegressor(
-            objective='count:poisson',
-            n_estimators=100,
-            max_depth=6,
-            learning_rate=0.1,
-            random_state=42
-        )
-        xgb_model = xgb_regressor.fit(
-            train_clean[training_variables],
-            train_clean[target].values.ravel()
-        )
+    train_features = trainset_feat[config['features']]
+    train_target = trainset_feat[config['target']]
 
-        y_pred_train = xgb_model.predict(train_clean[training_variables])
-        y_pred_test = xgb_model.predict(test_clean[training_variables])
-        train_metrics = calculate_metrics(
-            train_clean[target].values.ravel(),
-            y_pred_train
-        )
-        test_metrics = calculate_metrics(
-            test_clean[target].values.ravel(),
-            y_pred_test
-        )
-        fig2 = plot_feature_importance(xgb_model, training_variables)
-        fig3 = plot_actual_vs_predicted(
-            test_clean[target].values.ravel(),
-            y_pred_test
-        )
-        fig4 = plot_residuals(
-            test_clean[target].values.ravel(),
-            y_pred_test
-        )
-        mlflow.log_params(
-            {
-                'objective': xgb_model.objective,
-                'n_estimators': xgb_model.n_estimators,
-                'max_depth': xgb_model.max_depth,
-                'learning_rate': xgb_model.learning_rate,
-                'run_name': run_name,
-                'training_variables': training_variables,
-                'target': target,
-                'model_name': config["MODEL_NAME"],
-            }
-        )
-        for name, value in train_metrics.items():
-            mlflow.log_metric(f"train/{name}", value)
-        for name, value in test_metrics.items():
-            mlflow.log_metric(f"test/{name}", value)
-        mlflow.xgboost.log_model(
-            xgb_model=xgb_model,
-            artifact_path=config["ARTIFACT_MODEL_NAME"],
-            input_example=test_clean[training_variables].head(5)
-        )
-        mlflow.log_figure(fig1, "claims_distribution.png")
-        mlflow.log_figure(fig2, "feature_importance.png")
-        mlflow.log_figure(fig3, "actual_vs_predicted.png")
-        mlflow.log_figure(fig4, "residuals.png")
-        print(f"✓ Model training completed")
+    test_features = testset_feat[config['features']]
+    test_target = testset_feat[config['target']]
 
-    # After the run completes, register and upload the model
-    # print("\n" + "=" * 50)
-    # print("Registering and uploading model...")
-    # print("=" * 50)
-    # version = register_and_upload_model(config, run_id)
-    # print("\n" + "=" * 50)
-    # print(f"✓ Process completed successfully!")
-    # print(f"Model: {config['MODEL_NAME']} v{version}")
-    # print(f"Run ID: {run_id}")
-    # print("=" * 50)
-    return run_id  #, version
-if __name__ == "__main__":
-    run_id = main(CONFIG)
+
+    model = select_training_algorithm(
+        config['frequency']['algorithm'],
+        config['frequency']['parameters'],
+    )
+    model.fit(train_features, train_target.values.ravel())
+
+
+    y_pred_train = model.predict(train_features)
+    y_pred_test = model.predict(test_features)
+
+
+    train_metrics = calculate_metrics(train_target, y_pred_train)
+    test_metrics = calculate_metrics(test_target, y_pred_test)
+
+
+    fig_dist = plot_claims_distribution(trainset_feat, target=config['target'])
+    fig_importance = plot_feature_importance(model, config['features'])
+    fig_residuals = plot_residuals(test_target, y_pred_test)
+    fig_actual_pred = plot_actual_vs_predicted(test_target, y_pred_test)
+
+
+    tracking.init(config['tracking']['uri'], config['tracking']['experiment_name'])
+
+    with tracking.start_run(
+        run_name=config['tracking']['run_name'],
+        description=config['tracking']['run_description'],
+    ) as run_id:
+        tracking.log_params(config['frequency']['parameters'])
+        tracking.log_metrics(train_metrics, prefix="train")
+        tracking.log_metrics(test_metrics, prefix="test")
+        tracking.log_model(model, artifact_path=config['tracking']['artifact_model_name'])
+        tracking.log_figures({
+            "claims_distribution.png": fig_dist,
+            "feature_importance.png": fig_importance,
+            "residuals.png": fig_residuals,
+            "actual_vs_predicted.png": fig_actual_pred,
+        })
+
+
+if __name__ == '__main__':
+    from src.config import load_config
+    CONFIG = load_config(yaml_path='config/renewal.yaml')
+    run(config=CONFIG)
+
+
 
