@@ -48,7 +48,7 @@ def log_model(model, artifact_path: str, input_example=None):
         if isinstance(model, XGBModel):
             mlflow.xgboost.log_model(
                 xgb_model=model,
-                artifact_path=artifact_path,
+                name=artifact_path,
                 input_example=input_example,
             )
             return
@@ -57,7 +57,7 @@ def log_model(model, artifact_path: str, input_example=None):
 
     mlflow.sklearn.log_model(
         sk_model=model,
-        artifact_path=artifact_path,
+        name=artifact_path,
         input_example=input_example,
     )
 
