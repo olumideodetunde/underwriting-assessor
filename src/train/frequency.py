@@ -53,15 +53,14 @@ def run(config):
 
 
     tracking.init(config['tracking']['uri'], config['tracking']['experiment_name'])
-
     with tracking.start_run(
         run_name=config['tracking']['run_name'],
         description=config['tracking']['run_description'],
     ) as run_id:
-        tracking.log_params(config['frequency']['parameters'])
-        tracking.log_metrics(train_metrics, prefix="train")
-        tracking.log_metrics(test_metrics, prefix="test")
-        tracking.log_model(model, artifact_path=config['tracking']['artifact_model_name'])
+        tracking.log_parameters(config['frequency']['parameters'])
+        tracking.log_metrics_nested(train_metrics, prefix="train")
+        tracking.log_metrics_nested(test_metrics, prefix="test")
+        tracking.log_model(model, name=config['tracking']['artifact_model_name'])
         tracking.log_figures({
             "claims_distribution.png": fig_dist,
             "feature_importance.png": fig_importance,
