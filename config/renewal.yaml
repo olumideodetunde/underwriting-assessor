@@ -1,12 +1,18 @@
 insurance_csv: "data/input/exp/Motor_vehicle_insurance_data.csv"
 
 features:
-  - Year_matriculation
-  - Type_risk
   - Area
+  - Type_risk
   - Value_vehicle
-  - Distribution_channel
+  - fuel_type_encoded
   - Cylinder_capacity
+  - Year_matriculation
+  - Distribution_channel
+  - driver_experience_age
+  - Value_vehicle_log_transformed
+  - driver_age_experience_age_diff
+  - driver_age_at_contract_inception
+  - driver_age_experience_ratio_proxy_for_driving_experience
 
 target: N_claims_year
 
@@ -19,6 +25,6 @@ frequency:
 tracking:
   uri: "http://127.0.0.1:5000"
   experiment_name: "Insurance Claims Frequency Model"
-  run_name: "run_004"
+  run_name: "run_005"
   run_description: "Poisson regression for insurance claims frequency prediction"
   artifact_model_name: "poisson_model"
