@@ -31,11 +31,11 @@ def run(config):
     test_target = testset_feat[config['target']]
 
 
-    model = select_training_algorithm(
+    train_algorithm = select_training_algorithm(
         config['frequency']['algorithm'],
         config['frequency']['parameters'],
     )
-    model.fit(train_features, train_target.values.ravel())
+    model = train_algorithm.fit(train_features, train_target.values.ravel())
 
 
     y_pred_train = model.predict(train_features)
