@@ -3,7 +3,7 @@ FROM python:3.11-slim
 WORKDIR /app
 
 RUN /usr/bin/apt-get update && \
-    /usr/bin/apt-get install -y --no-install-recommends gcc && \
+    /usr/bin/apt-get install -y --no-install-recommends curl gcc && \
     rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
@@ -13,6 +13,6 @@ COPY . /app/
 
 EXPOSE 80
 
-HEALTHCHECK --interval=30s --timeout=30s --start-period=10s CMD curl -f http://localhost:80/health || exit 1
+HEALTHCHECK --interval=30s --timeout=30s --start-period=10s CMD curl -f http://localhost:80/ready || exit 1
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]

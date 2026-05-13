@@ -59,6 +59,7 @@ def predict(data: MotorInsuranceData):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/ready")
 @app.post("/ready")
 def readiness_checkpoint():
     logging.info("Readiness Checkpoint Ready")
