@@ -1,0 +1,24 @@
+insurance_csv: "data/input/exp/Motor_vehicle_insurance_data.csv"
+
+features:
+  - Year_matriculation
+  - Type_risk
+  - Area
+  - Value_vehicle
+  - Distribution_channel
+  - Cylinder_capacity
+
+target: N_claims_year
+
+frequency:
+  algorithm: poisson_regressor
+  parameters:
+    alpha: 1.0
+    max_iter: 1000
+
+tracking:
+  uri: "http://127.0.0.1:5000"
+  experiment_name: "Insurance Claims Frequency Model"
+  run_name: "run_new_client_001"
+  run_description: "Poisson regression for insurance claims frequency prediction"
+  artifact_model_name: "poisson_model"
