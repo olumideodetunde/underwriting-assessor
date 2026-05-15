@@ -29,7 +29,7 @@ class FrequencyConfig(BaseModel):
 class TrackingConfig(BaseModel):
     uri: str = "http://127.0.0.1:5000"
     experiment_name: str
-    run_name: str = "run_001"
+    run_name: str = ""
     run_description: str = ""
     artifact_model_name: str
 
