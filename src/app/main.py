@@ -9,13 +9,18 @@ import pandas as pd
 from dotenv import load_dotenv
 
 load_dotenv()
-
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-MODEL_BUCKET_NAME = os.environ.get("MODEL_BUCKET_NAME")
-MODEL_PATH = os.environ.get("LOAD_MODEL_PATH")
+def get_required_env(name:str):
+    value = os.environ.get(name)
+    if not value:
+        raise ValueError(f"Environment variable {name} not set")
+    return value
+
+MODEL_BUCKET_NAME = get_required_env("MODEL_BUCKET_NAME")
+MODEL_PATH = get_required_env("MODEL_PATH")
+
 
 app = FastAPI(
     title = "Claims Frequency Inference",
