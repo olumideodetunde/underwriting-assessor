@@ -17,7 +17,7 @@ def run(config):
     driver = Driver()
     vehicle = Vehicle()
 
-    trainset_feat = vehicle.transform(trainset)
+    trainset_feat = vehicle.fit(trainset).transform(trainset)
     trainset_feat = driver.transform(trainset_feat)
 
     testset_feat = vehicle.transform(testset)
