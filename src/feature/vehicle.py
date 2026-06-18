@@ -7,8 +7,13 @@ from src.feature.base import BaseFeatureTransformer
 class Vehicle(BaseFeatureTransformer):
 
     def __init__(self):
-        ##kept here so that it can applied to test at some point using fit-transform?
-        self.fuel_type_uniques: pd.Index | None = None
+        self.fuel_type_uniques_: pd.Index | None = None
+
+    def fit(self, df: pd.DataFrame, source_col: str = "Type_fuel") -> "Vehicle":
+        # Learn the fuel-type -> code mapping ONCE, from training data only.
+        _, uniques = pd.factorize(df[source_col])
+        self.fuel_type_uniques_ = uniques
+        return self
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         df = self.encode_fuel_type(df)
@@ -20,10 +25,13 @@ class Vehicle(BaseFeatureTransformer):
             df: pd.DataFrame,
             source_col: str = "Type_fuel",
             column_to_be_created: str = "fuel_type_encoded") -> pd.DataFrame:
+        if self.fuel_type_uniques_ is None:
+            raise RuntimeError(
+                "Vehicle must be fitted before transform; call fit() first."
+            )
         df = df.copy()
-        codes, uniques = pd.factorize(df[source_col])
-        df[column_to_be_created] = codes
-        self.fuel_type_uniques = uniques
+        # Apply the LEARNED mapping. Unseen categories -> -1.
+        df[column_to_be_created] = self.fuel_type_uniques_.get_indexer(df[source_col])
         return df
 
     def log_transform_vehicle_value(
