@@ -347,3 +347,24 @@ class TestTransform:
         result = driver.transform(sample_df)
         assert (result["driver_experience_age"] >= 0).all()
 
+
+# =============================================================
+# 8. fit / transform contract (stateless)
+# =============================================================
+
+class TestFitTransformContract:
+
+    def test_fit_returns_self(self, driver, sample_df):
+        assert driver.fit(sample_df) is driver
+
+    def test_transform_works_without_fit(self, driver, sample_df):
+        """Driver is stateless: transform() does not require a prior fit()."""
+        result = driver.transform(sample_df)
+        assert isinstance(result, pd.DataFrame)
+
+    def test_fit_then_transform_chains(self, driver, sample_df):
+        """fit() is a no-op, so chaining produces the same columns as transform alone."""
+        chained = driver.fit(sample_df).transform(sample_df)
+        direct = Driver().transform(sample_df)
+        assert list(chained.columns) == list(direct.columns)
+

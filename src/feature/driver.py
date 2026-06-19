@@ -3,6 +3,9 @@ import pandas as pd
 from src.feature.base import BaseFeatureTransformer
 
 class Driver(BaseFeatureTransformer):
+    def fit(self, df: pd.DataFrame) -> "Driver":
+        return self
+
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         df = self.convert_all_date_columns_to_datetime(df)
         df = self.create_driver_age_at_contract_inception(df)
