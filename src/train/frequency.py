@@ -1,6 +1,6 @@
 from src.data.loader import load_csv
 from src.data.splitter import split_data
-from src.feature import Driver, Vehicle
+from src.feature import FittedFeaturePipeline
 from src.model.factory import select_training_algorithm
 from src.metrics import (plot_claims_distribution,
                          plot_feature_importance,
@@ -21,14 +21,11 @@ def train_and_evaluate(config) -> dict:
     insurance_dataset = load_csv(config['insurance_csv'])
     trainset, testset = split_data(insurance_dataset)
 
-    driver = Driver()
-    vehicle = Vehicle()
-
-    trainset_feat = vehicle.fit(trainset).transform(trainset)
-    trainset_feat = driver.transform(trainset_feat)
-
-    testset_feat = vehicle.transform(testset)
-    testset_feat = driver.transform(testset_feat)
+    # Feature engineering - fit on training data only to avoid leakage.
+    feature_pipeline = FittedFeaturePipeline()
+    feature_pipeline.fit(trainset)              # learn encodings from train split
+    trainset_feat = feature_pipeline.transform(trainset)
+    testset_feat = feature_pipeline.transform(testset)  # apply learned encodings
 
 
     train_features = trainset_feat[config['features']]
