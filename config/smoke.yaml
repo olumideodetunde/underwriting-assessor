@@ -1,0 +1,29 @@
+# Config for the no-mistakes gate metrics smoke check
+# (scripts/gate_metrics_smoke.py). Mirrors renewal.yaml but points at the
+# committed dataset so the gate can retrain the frequency model with no
+# MLflow/S3. The tracking block only exists to satisfy the config schema;
+# the smoke check reuses train_and_evaluate(), which ignores it.
+insurance_csv: "data/input/Motor_vehicle_insurance_data.csv"
+
+features:
+  - Year_matriculation
+  - Type_risk
+  - Area
+  - Value_vehicle
+  - Distribution_channel
+  - Cylinder_capacity
+
+target: N_claims_year
+
+frequency:
+  algorithm: poisson_regressor
+  parameters:
+    alpha: 1.0
+    max_iter: 1000
+
+tracking:
+  uri: "http://127.0.0.1:5000"
+  experiment_name: "Insurance Claims Frequency Model"
+  run_name: "gate_smoke"
+  run_description: "Gate metrics smoke check for insurance claims frequency prediction"
+  artifact_model_name: "poisson_model"
