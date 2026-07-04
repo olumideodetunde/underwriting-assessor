@@ -101,7 +101,8 @@ The model factory maps algorithm strings to estimators: `xgboost`, `poisson_regr
 `Vehicle.fit(trainset)` learns its fuel-type encoding on the training split only, then `.transform()` applies it to train and test.
 `Driver` gained a `fit()` for interface consistency even though its features are row-wise; keep both transformers fit/transform-shaped.
 `FittedFeaturePipeline` (`src/feature/pipeline.py`, exported from `src/feature/__init__.py`) composes the two into one fit/transform unit - `fit()` learns state via `Vehicle.fit`, `transform()` applies Vehicle then Driver in training order and raises `RuntimeError` if called before `fit()`.
-It is not yet wired into training (`src/train/frequency.py` still calls the transformers directly; rewiring and MLflow persistence are deferred to issues #112/#115).
+Frequency training now uses it: `train_and_evaluate()` in `src/train/frequency.py` fits the pipeline on the train split and transforms both splits through it (issue #112).
+MLflow persistence of the fitted pipeline is still deferred to issue #115.
 - Config drives behaviour: the YAML is the only difference between the new-client and renewal models — put new knobs in config, not in branching code.
 - Notebooks explore, `src/` implements: exploratory work lives in `notebook/`; production code with tests lives in `src/`.
 - Type hints are expected throughout (modern style: `dict[str, Any]`, `list[str]`, `X | None`).
