@@ -83,7 +83,7 @@ config/renewal.yaml (or new_client.yaml)
         ▼  src/config.py         validate config (Pydantic)
         ▼  src/data/loader.py    load CSV (';' delimiter, na_values ["NA",""])
         ▼  src/data/splitter.py  train/test split (default random_state 42)
-        ▼  src/feature/          Vehicle.fit(train).transform(...), then Driver.transform(...)
+        ▼  src/feature/          FittedFeaturePipeline.fit(train).transform(...) (Vehicle then Driver)
         ▼  src/model/factory.py  select_training_algorithm(name, params)
         ▼  src/train/frequency.py orchestrate: fit → predict → metrics → plots
         ▼  src/metrics.py        MSE/RMSE/MAE/R²/Poisson deviance + plots
