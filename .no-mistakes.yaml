@@ -1,0 +1,20 @@
+# no-mistakes gate config for underwriting-assessor.
+# Makes the gate deterministic: every gated PR runs the same test + metrics
+# smoke commands instead of leaving it to agent auto-detection.
+# See https://kunchenguid.github.io/no-mistakes/ (reference/repo-config).
+
+commands:
+  # Full pytest suite, then a lightweight model-metrics smoke check whose
+  # stdout + saved plots (under .no-mistakes/evidence/) become the data-science
+  # evidence attached to the PR.
+  test: "pytest tests/ -v && python -m scripts.gate_metrics_smoke"
+  # No linter/formatter is wired in this repo (no ruff/black/mypy/pre-commit).
+  # A deterministic no-op keeps the lint step from failing or auto-detecting a
+  # tool that does not exist here. Wire a real linter here if one is added.
+  lint: "true"
+
+# Persist smoke-check evidence in the repo so it rides along on the gated PR.
+test:
+  evidence:
+    store_in_repo: true
+    dir: .no-mistakes/evidence
