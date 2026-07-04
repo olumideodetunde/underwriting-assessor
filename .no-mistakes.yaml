@@ -9,7 +9,11 @@ commands:
   # evidence attached to the PR.
   # Prefer the venv/`uv` `python` (documented setup); fall back to `python3.9`
   # for a bare homebrew install where only `python3.9` carries the ML deps.
-  test: "pytest tests/ -v && $(command -v python || command -v python3.9) -m scripts.gate_metrics_smoke"
+  # Uses a plain `||` fallback (not `$(command -v ...)`) so it works even when
+  # the executor does not evaluate command substitution: if bare `python` is
+  # absent it exits 127 and the run retries with `python3.9`. The braces keep a
+  # pytest failure from falling through into the fallback and masking it.
+  test: "pytest tests/ -v && { python -m scripts.gate_metrics_smoke || python3.9 -m scripts.gate_metrics_smoke; }"
   # No linter/formatter is wired in this repo (no ruff/black/mypy/pre-commit).
   # A deterministic no-op keeps the lint step from failing or auto-detecting a
   # tool that does not exist here. Wire a real linter here if one is added.
