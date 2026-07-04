@@ -58,6 +58,23 @@ make deploy-service      # ECS/ALB via terraform/app
 
 There is no `make test`, `make serve`, `make train`, or `make lint` target — those exist only in the docs.
 
+## Review gate (no-mistakes)
+
+`no-mistakes` is the mandatory review gate for this repo.
+Every agent routes finished work through it - agents do NOT `git push origin` or open PRs by hand.
+The gate runs an AI-driven pipeline (review → test → docs → lint) in a disposable worktree, auto-applies safe fixes, escalates judgment calls, and opens a clean PR against `origin` only when every check is green.
+The user's only manual step is reviewing that final gated PR.
+
+- **Gate your work** when a task's changes are committed on a branch: run `/no-mistakes` (agent skill - gates existing committed work and drives the pipeline headlessly) or `git push no-mistakes <branch>`.
+Do not `git push origin` and do not open a PR yourself; the gate does both.
+- **What the gate runs here** (from `.no-mistakes.yaml`): `pytest tests/ -v` then `python -m scripts.gate_metrics_smoke` as the test step.
+The lint step is a deterministic no-op (`true`) because no linter is wired (see the note in `## Conventions & gotchas`); do not invent one.
+- **Data-science evidence on the PR**: `scripts/gate_metrics_smoke.py` retrains the frequency model on the committed dataset (`data/input/Motor_vehicle_insurance_data.csv`, via `config/smoke.yaml`) with no MLflow/S3, printing the metrics table (MSE/RMSE/MAE/R²/Poisson deviance) and saving diagnostic plots under `.no-mistakes/evidence/`.
+It reuses `train_and_evaluate()` in `src/train/frequency.py` (the tracking-free half of `run()`).
+- **Setup prerequisite**: the gate must be initialised once per clone with `no-mistakes init` (creates the `no-mistakes` remote and installs the `/no-mistakes` skill).
+If the `no-mistakes` remote or `/no-mistakes` skill is missing, run `no-mistakes init` before gating.
+- Honour the existing conventions: plain `-` not `—`, and never auto-add an agent as a commit co-author - the gate authors the PR, so agents must not hand-push or hand-write PR bodies.
+
 ## Architecture / pipeline flow
 
 ```
