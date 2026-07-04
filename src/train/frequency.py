@@ -10,7 +10,14 @@ from src.metrics import (plot_claims_distribution,
 from src import tracking
 
 
-def run(config):
+def train_and_evaluate(config) -> dict:
+    """Train the frequency model and evaluate it, with no tracking side effects.
+
+    Returns a dict with the fitted ``model``, ``train_metrics``/``test_metrics``,
+    and the four diagnostic ``figures`` (keyed by their artifact filenames).
+    Kept free of MLflow/S3 so it can be reused by the gate metrics smoke check
+    (see ``scripts/gate_metrics_smoke.py``) without a tracking server or AWS creds.
+    """
     insurance_dataset = load_csv(config['insurance_csv'])
     trainset, testset = split_data(insurance_dataset)
 
@@ -46,11 +53,23 @@ def run(config):
     test_metrics = calculate_metrics(test_target, y_pred_test)
 
 
-    fig_dist = plot_claims_distribution(trainset_feat, target=config['target'])
-    fig_importance = plot_feature_importance(model, config['features'])
-    fig_residuals = plot_residuals(test_target, y_pred_test)
-    fig_actual_pred = plot_actual_vs_predicted(test_target, y_pred_test)
+    figures = {
+        "claims_distribution.png": plot_claims_distribution(trainset_feat, target=config['target']),
+        "feature_importance.png": plot_feature_importance(model, config['features']),
+        "residuals.png": plot_residuals(test_target, y_pred_test),
+        "actual_vs_predicted.png": plot_actual_vs_predicted(test_target, y_pred_test),
+    }
 
+    return {
+        "model": model,
+        "train_metrics": train_metrics,
+        "test_metrics": test_metrics,
+        "figures": figures,
+    }
+
+
+def run(config):
+    result = train_and_evaluate(config)
 
     tracking.init(config['tracking']['uri'], config['tracking']['experiment_name'])
     with tracking.start_run(
@@ -58,15 +77,10 @@ def run(config):
         description=config['tracking']['run_description'],
     ) as run_id:
         tracking.log_parameters(config['frequency']['parameters'])
-        tracking.log_metrics_nested(train_metrics, prefix="train")
-        tracking.log_metrics_nested(test_metrics, prefix="test")
-        tracking.log_model(model, name=config['tracking']['artifact_model_name'])
-        tracking.log_figures({
-            "claims_distribution.png": fig_dist,
-            "feature_importance.png": fig_importance,
-            "residuals.png": fig_residuals,
-            "actual_vs_predicted.png": fig_actual_pred,
-        })
+        tracking.log_metrics_nested(result["train_metrics"], prefix="train")
+        tracking.log_metrics_nested(result["test_metrics"], prefix="test")
+        tracking.log_model(result["model"], name=config['tracking']['artifact_model_name'])
+        tracking.log_figures(result["figures"])
 
 
 if __name__ == '__main__':
