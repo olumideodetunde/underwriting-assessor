@@ -21,7 +21,7 @@ Known mismatches:
 | Docs claim | Actual code |
 |---|---|
 | `src/serving/app.py`; endpoints `/predict/new_client`, `/health` | `src/app/main.py`; endpoints `POST /predict`, `GET /ready` |
-| `scripts/train.py`; `make train-new`, `make serve`, `make test`, `make lint` | No `scripts/` dir; run `python -m src.train.frequency`; Makefile has only terraform/docker targets |
+| `scripts/train.py`; `make train-new`, `make serve`, `make test`, `make lint` | `scripts/` holds only `gate_metrics_smoke.py` (no `train.py`); run `python -m src.train.frequency`; Makefile has only terraform/docker targets |
 | `src/features/` (plural), `src/monitoring.py`, `config/base.yaml` | `src/feature/` (singular); no `monitoring.py`; only `new_client.yaml` + `renewal.yaml` |
 | `src/training/trainer.py` | `src/train/frequency.py` and `src/train/severity.py` |
 | Dual serving endpoints, one per model | The app currently serves a SINGLE frequency model on `/predict` (title: "Claims Frequency Inference") |
@@ -65,6 +65,8 @@ Every agent routes finished work through it - agents do NOT `git push origin` or
 The gate runs an AI-driven pipeline (review → test → docs → lint) in a disposable worktree, auto-applies safe fixes, escalates judgment calls, and opens a clean PR against `origin` only when every check is green.
 The user's only manual step is reviewing that final gated PR.
 
+- **Standard issue-to-PR workflow**: the `/task-to-pr` skill (`.claude/skills/task-to-pr/SKILL.md`) captures the full loop - pick an issue, branch in an isolated worktree off a clean `main`, implement and test, commit with repo conventions, then hand the branch to the gate.
+Invoke it when starting work on a GitHub issue or when unsure of the branch/worktree/PR flow.
 - **Gate your work** when a task's changes are committed on a branch: run `/no-mistakes` (agent skill - gates existing committed work and drives the pipeline headlessly) or `git push no-mistakes <branch>`.
 Do not `git push origin` and do not open a PR yourself; the gate does both.
 - **What the gate runs here** (from `.no-mistakes.yaml`): `pytest tests/ -v` then `python -m scripts.gate_metrics_smoke` as the test step.
