@@ -14,14 +14,14 @@ The `no-mistakes` gate does all pushing and PR-opening - never `git push origin`
 - **1. Pick the issue.** Pull the next open issue(s) by number. Confirm dependencies are merged and the issue's premise still matches the code (e.g. #113 was stale - verify before trusting the issue text).
 - **2. Isolate: worktree + branch in one step.** Off a clean `main`:
   ```bash
-  git worktree add -b <n>-<slug> /Users/Olumide/.treehouse/underwriting-assessor-.../<n> main
+  git worktree add -b <n>-<slug> <worktree-root>/<n>-<slug> main
   ```
   `-b` creates the branch and the checkout together. Your main checkout stays on `main` and untouched.
   (You can also just create a branch in place - but a worktree keeps `main` clean and lets you run issues in parallel.)
 - **3. Implement in the worktree.** Make the change, keep type hints, follow repo conventions (plain `-`, config-driven).
 - **4. Test locally until green.** Run the issue's named test first, then the full suite:
   ```bash
-  pytest tests/test_frequency.py::test_run_completes_without_error -v
+  pytest tests/test_frequency.py::TestFrequencyRunEndToEnd::test_run_completes_without_error -v
   pytest tests/ -v
   ```
 - **5. Commit on the branch.** Conventional message, `(#<n>)` reference, no agent co-author, no `—`.
